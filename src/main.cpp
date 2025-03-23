@@ -7,6 +7,8 @@
 #define GPIOPIN32 32
 #define GPIOPIN33 33
 
+#define STATUS_LED 2
+
 #define PWM_CHANNEL_A 0
 #define PWM_CHANNEL_B 1
 #define PWM_FREQ 500
@@ -41,11 +43,15 @@ void setup()
     ledcWrite(PWM_CHANNEL_A, 0);
     ledcWrite(PWM_CHANNEL_B, 0);
 
-    pinMode(2, OUTPUT); // LED de status
-    digitalWrite(2, LOW);
+    pinMode(STATUS_LED, OUTPUT); // LED de status
+    digitalWrite(STATUS_LED, LOW);
 
     Serial.begin(115200);
-    client.setInsecure(); // Necessário para poder conectar ao broker sem um CA
+
+    //Como o hivemq grátis não permite gerar um CA, é necessário desabilitar a verificação de certificado
+    client.setInsecure();
+
+
     mqttClient.setServer(broker, port);
     mqttClient.setCallback(callback);
 
@@ -59,21 +65,21 @@ void loop()
 {
     if (WiFi.status() != WL_CONNECTED)
     {
-        digitalWrite(2,LOW);
+        digitalWrite(STATUS_LED,LOW);
         connectToWIFI();
     }
     else
     {
-        digitalWrite(2, HIGH);
+        digitalWrite(STATUS_LED, HIGH);
     }
     if (!mqttClient.connected())
     {
-        digitalWrite(2,LOW);
+        digitalWrite(STATUS_LED,LOW);
         connectToBroker();
     }
     else
     {
-        digitalWrite(2, HIGH);
+        digitalWrite(STATUS_LED, HIGH);
     }
     mqttClient.loop();
 }
@@ -98,7 +104,7 @@ void statusBlink()
 {
     for (int i = 0; i < 6; i++)
     {
-        digitalWrite(2, !digitalRead(2));
+        digitalWrite(STATUS_LED, !digitalRead(STATUS_LED));
         delay(500);
     }
 }
