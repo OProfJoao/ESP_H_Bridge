@@ -7,6 +7,11 @@
 #define GPIOPIN32 32
 #define GPIOPIN33 33
 
+#define PWM_CHANNEL_A 0
+#define PWM_CHANNEL_B 1
+#define PWM_FREQ 500
+#define PWM_RESOLUTION 8
+
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
 
@@ -30,8 +35,12 @@ void connectToBroker();
 
 void setup()
 {
-  pinMode(GPIOPIN32, OUTPUT);
-  pinMode(GPIOPIN33, OUTPUT);
+    ledcSetup(PWM_CHANNEL_A, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(PWM_CHANNEL_B, PWM_FREQ, PWM_RESOLUTION);
+    ledcAttachPin(GPIOPIN32, PWM_CHANNEL_A);
+    ledcAttachPin(GPIOPIN33, PWM_CHANNEL_B);
+    ledcWrite(PWM_CHANNEL_A, 0);
+    ledcWrite(PWM_CHANNEL_B, 0);
 
   Serial.begin(115200);
   client.setInsecure(); //Necessário para poder conectar ao broker sem um CA
@@ -61,75 +70,64 @@ void loop()
 
 void connectToWIFI()
 {
-  WiFi.begin(ssid, pass);
-  Serial.println("Connecting to Wifi...");
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    long now = millis(); 
-    // if(now % 100 == 0){
-    //   digitalWrite(GPIOPIN, !digitalRead(GPIOPIN));
-    // }
-    if(now % 1000 == 0){
-      Serial.print("Status: ");
-      Serial.println(WiFi.status());
+    WiFi.begin(ssid, pass);
+    Serial.println("Connecting to Wifi...");
+    
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        delay(1000);
+        Serial.print("Status: ");
+        Serial.println(WiFi.status());
     }
-  }
-  Serial.println("Wifi Connected");
-//   digitalWrite(GPIOPIN, HIGH);
-//   delay(1000);
-//   digitalWrite(GPIOPIN, LOW);
+    Serial.println("Wifi Connected");
 }
 
-void connectToBroker() {
-  Serial.println("Connecting to the Broker...");
-
-  while (!mqttClient.connected()) { // Limita a 5 tentativas
-    String clientId = "ESP32-Servo-" + String(random(0xffff), HEX);
-    Serial.print("Attempting connection as ");
-    Serial.println(clientId);
-    long now = millis();
-    if (mqttClient.connect(clientId.c_str(), mqtt_user, mqtt_pass)) {
-      Serial.println("Connected to the Broker!");
-      mqttClient.subscribe(topic);
-      Serial.print("Subscribed to topic: ");
-      Serial.println(topic);
-    //   digitalWrite(GPIOPIN, HIGH);
-    //   delay(1000);
-    //   digitalWrite(GPIOPIN, LOW);
-    } else {
-    //   if(now % 500 == 0){
-    //     digitalWrite(GPIOPIN, !digitalRead(GPIOPIN));
-    //   }
-      Serial.print("Connection failed, code: ");
-      Serial.println(mqttClient.state());
+void connectToBroker()
+{
+    Serial.println("Connecting to the Broker...");
+    while (!mqttClient.connected())
+    {
+        String clientId = "ESP32-Servo-" + String(random(0xffff), HEX);
+        Serial.print("Attempting connection as ");
+        Serial.println(clientId);
+        if (mqttClient.connect(clientId.c_str(), mqtt_user, mqtt_pass))
+        {
+            Serial.println("Connected to the Broker!");
+            mqttClient.subscribe(topic);
+            Serial.print("Subscribed to topic: ");
+            Serial.println(topic);
+        }
+        else
+        {
+            Serial.print("Connection failed, code: ");
+            Serial.println(mqttClient.state());
+            delay(5000); // Adicionado delay para evitar loop rápido
+        }
     }
-  }
-
-  if (!mqttClient.connected()) {
-    Serial.println("Failed to connect after multiple attempts.");
-  }
 }
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
-  String message = "";
-
-  for (int i = 0; i < length; i++)
-  {
-    char c = (char)payload[i];
-    if (!isDigit(c))
-    {
-      mqttClient.publish("esp_motor/status", "Valor inválido");
-      return;
-    }
-    message += c;
-
+    String message = "";
     
-  }
-  if(message.toInt() > 0 && message.toInt() < 255 ){
-    analogWrite(GPIOPIN32, message.toInt());
-  }else{
-    mqttClient.publish("esp_motor/status", "Valor inválido");
-  }
-
+    for (int i = 0; i < length; i++)
+    {
+        char c = (char)payload[i];
+        if (!isDigit(c))
+        {
+            mqttClient.publish("esp_motor/status", "Valor invalido");
+            return;
+        }
+        message += c; 
+    }
+    
+    int speed = message.toInt();
+    if (speed > 0 && speed < 255)
+    {
+        ledcWrite(PWM_CHANNEL_A, speed);
+    }
+    else
+    {
+        mqttClient.publish("esp_motor/status", "Valor invalido");
+    }
 }
