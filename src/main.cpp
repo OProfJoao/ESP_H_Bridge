@@ -12,20 +12,17 @@
 #define PWM_FREQ 500
 #define PWM_RESOLUTION 8
 
-
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
 
-
-
 const char *ssid = wifi_ssid;
 const char *pass = wifi_password;
-  
+
 const char *broker = mqtt_broker;
 const int port = 8883;
 
 const char *mqtt_user = mqtt_username;
-const char *mqtt_pass = mqtt_password  ;
+const char *mqtt_pass = mqtt_password;
 
 const char *topic = "esp_motor/speed";
 
@@ -47,28 +44,38 @@ void setup()
     pinMode(2, OUTPUT); // LED de status
     digitalWrite(2, LOW);
 
-  Serial.begin(115200);
-  client.setInsecure(); //Necessário para poder conectar ao broker sem um CA
-  mqttClient.setServer(broker, port);
-  mqttClient.setCallback(callback);
+    Serial.begin(115200);
+    client.setInsecure(); // Necessário para poder conectar ao broker sem um CA
+    mqttClient.setServer(broker, port);
+    mqttClient.setCallback(callback);
 
-  digitalWrite(GPIOPIN32, LOW);
-  digitalWrite(GPIOPIN33, LOW);
-  connectToWIFI();
-  connectToBroker();
+    digitalWrite(GPIOPIN32, LOW);
+    digitalWrite(GPIOPIN33, LOW);
+    connectToWIFI();
+    connectToBroker();
 }
 
 void loop()
 {
-  if(WiFi.status() != WL_CONNECTED)
-  {
-    connectToWIFI();
-  }
-  if (!mqttClient.connected())
-  {
-    connectToBroker();
-  }
-  mqttClient.loop();
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        digitalWrite(2,LOW);
+        connectToWIFI();
+    }
+    else
+    {
+        digitalWrite(2, HIGH);
+    }
+    if (!mqttClient.connected())
+    {
+        digitalWrite(2,LOW);
+        connectToBroker();
+    }
+    else
+    {
+        digitalWrite(2, HIGH);
+    }
+    mqttClient.loop();
 }
 
 /*-------------------------------------------------------------------------------*/
@@ -77,7 +84,7 @@ void connectToWIFI()
 {
     WiFi.begin(ssid, pass);
     Serial.println("Connecting to Wifi...");
-    
+
     while (WiFi.status() != WL_CONNECTED)
     {
         delay(1000);
@@ -87,9 +94,11 @@ void connectToWIFI()
     Serial.println("Wifi Connected");
     statusBlink();
 }
-void statusBlink(){
-    for(int i = 0; i<6 ;i++){
-        digitalWrite(2,!digitalRead(2));
+void statusBlink()
+{
+    for (int i = 0; i < 6; i++)
+    {
+        digitalWrite(2, !digitalRead(2));
         delay(500);
     }
 }
@@ -122,7 +131,7 @@ void connectToBroker()
 void callback(char *topic, byte *payload, unsigned int length)
 {
     String message = "";
-    
+
     for (int i = 0; i < length; i++)
     {
         char c = (char)payload[i];
@@ -131,9 +140,9 @@ void callback(char *topic, byte *payload, unsigned int length)
             mqttClient.publish("esp_motor/status", "Valor invalido");
             return;
         }
-        message += c; 
+        message += c;
     }
-    
+
     int speed = message.toInt();
     if (speed > 0 && speed < 255)
     {
