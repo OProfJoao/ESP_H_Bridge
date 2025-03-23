@@ -53,7 +53,7 @@ void setup()
 
     Serial.begin(115200);
 
-    //Como o hivemq grátis não permite gerar um CA, é necessário desabilitar a verificação de certificado
+    // As the free tier of HiveMQ does not allow generating a CA, it is necessary to disable certificate verification
     client.setInsecure();
 
 
@@ -134,7 +134,7 @@ void connectToBroker()
         {
             Serial.print("Connection failed, code: ");
             Serial.println(mqttClient.state());
-            delay(5000); // Adicionado delay para evitar loop rápido
+            delay(5000); // Delay to prevent flooding
         }
     }
 }
