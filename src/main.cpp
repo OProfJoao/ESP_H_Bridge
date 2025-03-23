@@ -12,6 +12,7 @@
 #define PWM_FREQ 500
 #define PWM_RESOLUTION 8
 
+
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
 
@@ -32,6 +33,7 @@ void connectToWIFI();
 
 void callback(char *topic, byte *message, unsigned int length);
 void connectToBroker();
+void statusBlink();
 
 void setup()
 {
@@ -41,6 +43,9 @@ void setup()
     ledcAttachPin(GPIOPIN33, PWM_CHANNEL_B);
     ledcWrite(PWM_CHANNEL_A, 0);
     ledcWrite(PWM_CHANNEL_B, 0);
+
+    pinMode(2, OUTPUT); // LED de status
+    digitalWrite(2, LOW);
 
   Serial.begin(115200);
   client.setInsecure(); //Necessário para poder conectar ao broker sem um CA
@@ -80,6 +85,13 @@ void connectToWIFI()
         Serial.println(WiFi.status());
     }
     Serial.println("Wifi Connected");
+    statusBlink();
+}
+void statusBlink(){
+    for(int i = 0; i<6 ;i++){
+        digitalWrite(2,!digitalRead(2));
+        delay(500);
+    }
 }
 
 void connectToBroker()
@@ -96,6 +108,7 @@ void connectToBroker()
             mqttClient.subscribe(topic);
             Serial.print("Subscribed to topic: ");
             Serial.println(topic);
+            statusBlink();
         }
         else
         {
