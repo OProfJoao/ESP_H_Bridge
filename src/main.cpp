@@ -20,7 +20,7 @@ const int port = 8883;
 const char *mqtt_user = mqtt_username;
 const char *mqtt_pass = mqtt_password  ;
 
-const char *topic = "servo/angle";
+const char *topic = "esp_motor/speed";
 
 void connectToWIFI();
 
@@ -116,7 +116,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     char c = (char)payload[i];
     if (!isDigit(c))
     {
-      mqttClient.publish("servo/status", "Valor inválido");
+      mqttClient.publish("esp_motor/status", "Valor inválido");
       return;
     }
     message += c;
