@@ -17,14 +17,19 @@
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
 
+//Values set in a env file
+
 const char *ssid = wifi_ssid;
 const char *pass = wifi_password;
 
 const char *broker = mqtt_broker;
-const int port = 8883;
 
 const char *mqtt_user = mqtt_username;
 const char *mqtt_pass = mqtt_password;
+
+//----------------------------------------------
+
+const int port = 8883;
 
 const char *topic = "esp_motor/speed";
 
