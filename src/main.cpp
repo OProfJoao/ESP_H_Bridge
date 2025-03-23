@@ -4,7 +4,8 @@
 #include "env.h"
 #include <WiFiClientSecure.h>
 
-#define GPIOPIN 32
+#define GPIOPIN32 32
+#define GPIOPIN33 33
 
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
@@ -29,14 +30,16 @@ void connectToBroker();
 
 void setup()
 {
-  pinMode(GPIOPIN, OUTPUT);
+  pinMode(GPIOPIN32, OUTPUT);
+  pinMode(GPIOPIN33, OUTPUT);
 
   Serial.begin(115200);
   client.setInsecure(); //Necessário para poder conectar ao broker sem um CA
   mqttClient.setServer(broker, port);
   mqttClient.setCallback(callback);
 
-  digitalWrite(GPIOPIN, LOW);
+  digitalWrite(GPIOPIN32, LOW);
+  digitalWrite(GPIOPIN33, LOW);
   connectToWIFI();
   connectToBroker();
 }
@@ -120,7 +123,13 @@ void callback(char *topic, byte *payload, unsigned int length)
       return;
     }
     message += c;
-  }
 
+    
+  }
+  if(message.toInt() > 0 && message.toInt() < 255 ){
+    analogWrite(GPIOPIN32, message.toInt());
+  }else{
+    mqttClient.publish("esp_motor/status", "Valor inválido");
+  }
 
 }
