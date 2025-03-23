@@ -63,18 +63,18 @@ void connectToWIFI()
   while (WiFi.status() != WL_CONNECTED)
   {
     long now = millis(); 
-    if(now % 100 == 0){
-      digitalWrite(GPIOPIN, !digitalRead(GPIOPIN));
-    }
+    // if(now % 100 == 0){
+    //   digitalWrite(GPIOPIN, !digitalRead(GPIOPIN));
+    // }
     if(now % 1000 == 0){
       Serial.print("Status: ");
       Serial.println(WiFi.status());
     }
   }
   Serial.println("Wifi Connected");
-  digitalWrite(GPIOPIN, HIGH);
-  delay(1000);
-  digitalWrite(GPIOPIN, LOW);
+//   digitalWrite(GPIOPIN, HIGH);
+//   delay(1000);
+//   digitalWrite(GPIOPIN, LOW);
 }
 
 void connectToBroker() {
@@ -90,13 +90,13 @@ void connectToBroker() {
       mqttClient.subscribe(topic);
       Serial.print("Subscribed to topic: ");
       Serial.println(topic);
-      digitalWrite(GPIOPIN, HIGH);
-      delay(1000);
-      digitalWrite(GPIOPIN, LOW);
+    //   digitalWrite(GPIOPIN, HIGH);
+    //   delay(1000);
+    //   digitalWrite(GPIOPIN, LOW);
     } else {
-      if(now % 500 == 0){
-        digitalWrite(GPIOPIN, !digitalRead(GPIOPIN));
-      }
+    //   if(now % 500 == 0){
+    //     digitalWrite(GPIOPIN, !digitalRead(GPIOPIN));
+    //   }
       Serial.print("Connection failed, code: ");
       Serial.println(mqttClient.state());
     }
@@ -121,4 +121,6 @@ void callback(char *topic, byte *payload, unsigned int length)
     }
     message += c;
   }
+
+
 }
