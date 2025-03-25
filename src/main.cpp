@@ -17,7 +17,7 @@
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
 
-//Values set in a env file
+//Values set in /include/env.h
 
 const char *ssid = wifi_ssid;
 const char *pass = wifi_password;
