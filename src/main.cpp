@@ -52,6 +52,8 @@ const char *wifi_password = WIFI_CONN_PASSWORD;
 
 const char *topic = "esp_motor/speed";
 
+int *currentSpeed = 0;
+
 //!---------------------       Loops Principais        ---------------------
 
 void setup()
@@ -152,32 +154,24 @@ void connectToMQTT() {
 void statusLED(byte status){   
     turnOffLEDs();
     switch (status) {
-        case 254: // ❌ Erro (Vermelho)
+        case 254: // Erro (Vermelho)
             setLEDColor(255, 0, 0);
             break;
     
-        case 1: // 📶 Conectando ao Wi-Fi (Amarelo)
+        case 1: // Conectando ao Wi-Fi (Amarelo)
             setLEDColor(150, 255, 0);
             break;
     
-        case 2: // 🔗 Conectando ao MQTT (Rosa)
+        case 2: // Conectando ao MQTT (Rosa)
             setLEDColor(150, 0, 255);
             break;
     
-        case 3: // 🚗 Movendo para frente (Verde)
+        case 3: // Movendo para frente (Verde)
             setLEDColor(0, 255, 0);
             break;
     
-        case 4: // 🔄 Movendo para trás (Ciano)
+        case 4: // Movendo para trás (Ciano)
             setLEDColor(0, 255, 255);
-            break;
-    
-        case 5: // 📩 Recebendo comando MQTT (Azul)
-            setLEDColor(0, 0, 255);
-            break;
-    
-        case 6: // ✅ Sistema pronto (Branco)
-            setLEDColor(150, 255, 255);
             break;
 
         default:
@@ -225,9 +219,12 @@ void callback(char *topic, byte *payload, unsigned int length)
     int speed = message.toInt();
     if (speed >= 0 && speed < 255)
     {
-        statusLED(3);
-        ledcWrite(PWM_FORWARD, speed);
-        Serial.println(String("Velocidade alterada para: ") + speed);
+        if(speed != *currentSpeed){
+            *currentSpeed = speed;
+            statusLED(3);
+            ledcWrite(PWM_FORWARD, speed);
+            Serial.println(String("Velocidade alterada para: ") + speed);
+        }
     }
     else
     {   
