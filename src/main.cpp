@@ -20,8 +20,6 @@
 
 //!---------------------       Cabeçalho de Funções     ---------------------
 
-void connectToWIFI();
-
 void callback(char *topic, byte *message, unsigned int length);
 void connectToMQTT();
 void connectToWiFi();
@@ -35,16 +33,14 @@ PubSubClient mqttClient(client);
 
 //Values set in /include/env.h
 
-const char *WIFI_SSID = WIFI_SSID;
-const char *WIFI_PASSWORD = WIFI_PASSWORD;
+const char *mqtt_broker = MQTT_BROKER_CONN;
+const char *mqtt_user = MQTT_USER_CONN;
+const char *mqtt_password = MQTT_PASSWORD_CONN;
+const char *mqtt_id = MQTT_ID_CONN;
+const int mqtt_port = MQTT_PORT_CONN;
 
-const char *MQTT_BROKER = MQTT_BROKER;
-
-const char *MQTT_USER = MQTT_USER;
-const char *MQTT_PASS = MQTT_PASS;
-
-const char *MQTT_BROKER = MQTT_BROKER;
-const int MQTT_PORT = MQTT_PORT;
+const char *wifi_ssid = WIFI_CONN_SSID;
+const char *wifi_password = WIFI_CONN_PASSWORD;
 
 const char *topic = "esp_motor/speed";
 
@@ -80,11 +76,11 @@ void loop()
 {
     if (WiFi.status() != WL_CONNECTED)
     {
-        connectToWIFI();
+        connectToWiFi();
     }
     if (!mqttClient.connected())
     {
-        connectToBroker();
+        connectToMQTT();
     }
     mqttClient.loop();
 }
@@ -93,7 +89,7 @@ void loop()
 
 void connectToWiFi() {
     statusLED(1);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    WiFi.begin(wifi_ssid, wifi_password);
     Serial.print("Conectando ao WiFi...");
     while (!WiFi.isConnected()) {
       delay(1000);
@@ -109,11 +105,11 @@ void connectToWiFi() {
 
 void connectToMQTT() {
     statusLED(2);
-    mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
+    mqttClient.setServer(mqtt_broker, mqtt_port);
   
     while (!mqttClient.connected()) {
       Serial.print("Conectando ao Broker MQTT...");
-      if (mqttClient.connect(MQTT_ID, MQTT_USER, MQTT_PASS)) {
+      if (mqttClient.connect(mqtt_id, mqtt_user, mqtt_password)) {
         mqttClient.subscribe(topic);
         mqttClient.setCallback(callback);
   
