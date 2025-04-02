@@ -132,21 +132,31 @@ void connectToMQTT() {
 void statusLED(byte status){   
     turnOffLEDs();
     switch (status)    {
-    case -1: // ERROR
+    case -1: // ERROR       RED
         for (int i = 0; i < 4; i++){
             digitalWrite(STATUS_LED_R,!digitalRead(STATUS_LED_R));
             delay(100);
         }
         break;
-    case 1: // WIFI_CONNECTION
+        
+    case 1: // WIFI_CONNECTION      YELLOW
         digitalWrite(STATUS_LED_R,HIGH);
         digitalWrite(STATUS_LED_G,HIGH);
         break;
-    case 2: // MQTT_CONNECTION
+
+    case 2: // MQTT_CONNECTION      PINK
         digitalWrite(STATUS_LED_R,HIGH);
         digitalWrite(STATUS_LED_B,HIGH);
         break;
-    
+
+    case 3: //FORWARD               GREEN
+        digitalWrite(STATUS_LED_G,HIGH);
+        break;
+
+    case 4: //BACKWARD              LIGHT BLUE
+        digitalWrite(STATUS_LED_G,HIGH);
+        digitalWrite(STATUS_LED_B,HIGH);
+        break;
 
     default:
         for (int i = 0; i < 4; i++){
@@ -183,6 +193,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     int speed = message.toInt();
     if (speed > 0 && speed < 255)
     {
+
         ledcWrite(PWM_FORWARD, speed);
     }
     else
