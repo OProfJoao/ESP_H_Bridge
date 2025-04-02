@@ -13,8 +13,14 @@
 #define STATUS_LED_G 27
 #define STATUS_LED_B 26
 
+#define PWM_LED_R 2
+#define PWM_LED_G 3
+#define PWM_LED_B 4
+
 #define PWM_FORWARD 0
 #define PWM_BACKWARD 1
+
+
 #define PWM_FREQ 500
 #define PWM_RESOLUTION 8
 
@@ -64,9 +70,14 @@ void setup()
     digitalWrite(BACKWARD_DIRECTION_PIN, LOW);
 
     // Status LED
-    pinMode(STATUS_LED_R, OUTPUT);
-    pinMode(STATUS_LED_G, OUTPUT);
-    pinMode(STATUS_LED_B, OUTPUT);
+
+    ledcSetup(PWM_LED_R, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(PWM_LED_G, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(PWM_LED_B, PWM_FREQ, PWM_RESOLUTION);
+
+    ledcAttachPin(STATUS_LED_R, PWM_LED_R);
+    ledcAttachPin(STATUS_LED_G, PWM_LED_G);
+    ledcAttachPin(STATUS_LED_B, PWM_LED_B);
     turnOffLEDs();
     delay(2000);
 }
@@ -87,6 +98,12 @@ void loop()
 }
 
 //!---------------------       Funções extras        ---------------------
+
+void setLEDColor(byte r, byte g, byte b) {
+    ledcWrite(PWM_LED_R, r - 255);
+    ledcWrite(PWM_LED_G, g - 255);
+    ledcWrite(PWM_LED_B, b - 255);
+}
 
 void connectToWiFi() {
     statusLED(1);
@@ -133,40 +150,46 @@ void connectToMQTT() {
 
 void statusLED(byte status){   
     turnOffLEDs();
-    switch (status)    {
-    case 254: // ERROR       RED
-        digitalWrite(STATUS_LED_R,HIGH);
-        break;
+    switch (status) {
+        case 254: // ❌ Erro (Vermelho)
+            setLEDColor(255, 0, 0);
+            break;
+    
+        case 1: // 📶 Conectando ao Wi-Fi (Amarelo)
+            setLEDColor(255, 255, 0);
+            break;
+    
+        case 2: // 🔗 Conectando ao MQTT (Rosa)
+            setLEDColor(255, 0, 255);
+            break;
+    
+        case 3: // 🚗 Movendo para frente (Verde)
+            setLEDColor(0, 255, 0);
+            break;
+    
+        case 4: // 🔄 Movendo para trás (Ciano)
+            setLEDColor(0, 255, 255);
+            break;
+    
+        case 5: // 📩 Recebendo comando MQTT (Azul)
+            setLEDColor(0, 0, 255);
+            break;
+    
+        case 6: // ✅ Sistema pronto (Branco)
+            setLEDColor(255, 255, 255);
+            break;
 
-    case 1: // WIFI_CONNECTION      YELLOW
-        digitalWrite(STATUS_LED_G,HIGH);
-        break;
-
-    case 2: // MQTT_CONNECTION      PINK
-        digitalWrite(STATUS_LED_B,HIGH);
-        break;
-
-    case 3: //FORWARD               GREEN
-        digitalWrite(STATUS_LED_G,HIGH);
-        break;
-
-    case 4: //BACKWARD              LIGHT BLUE
-        digitalWrite(STATUS_LED_R,HIGH);
-        break;
-
-    default:
-        for (byte i = 0; i < 4; i++){
-            digitalWrite(STATUS_LED_B,!digitalRead(STATUS_LED_B));
-            delay(100);
-        }
-        break;
+        default:
+            for (byte i = 0; i < 4; i++){
+                digitalWrite(STATUS_LED_B,!digitalRead(STATUS_LED_B));
+                delay(100);
+            }
+            break;
     }
 }
 
-void turnOffLEDs(){
-    digitalWrite(STATUS_LED_R, LOW);
-    digitalWrite(STATUS_LED_G, LOW);
-    digitalWrite(STATUS_LED_B, LOW);
+void turnOffLEDs() {
+    setLEDColor(0, 0, 0);
 }
 
 void handleError(){
