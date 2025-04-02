@@ -25,6 +25,7 @@ void connectToMQTT();
 void connectToWiFi();
 void statusLED(byte status);
 void turnOffLEDs();
+void handleError();
 
 //!---------------------       Definições de Constantes     ---------------------
 
@@ -67,44 +68,47 @@ void setup()
     pinMode(STATUS_LED_G, OUTPUT);
     pinMode(STATUS_LED_B, OUTPUT);
     turnOffLEDs();
-
-    connectToWiFi();
-    connectToMQTT();
+    delay(2000);
 }
 
 void loop()
 {
     if (WiFi.status() != WL_CONNECTED)
     {
+        handleError();
         connectToWiFi();
     }
     if (!mqttClient.connected())
     {
+        handleError();
         connectToMQTT();
     }
     mqttClient.loop();
 }
 
-/*-------------------------------------------------------------------------------*/
+//!---------------------       Funções extras        ---------------------
 
 void connectToWiFi() {
     statusLED(1);
+    delay(500);
     WiFi.begin(wifi_ssid, wifi_password);
     Serial.print("Conectando ao WiFi...");
-    while (!WiFi.isConnected()) {
+    while (WiFi.status() != WL_CONNECTED) {
       delay(1000);
       Serial.print(".");
     }
-    if (WiFi.isConnected()) {
-      Serial.println("Conectado ao WiFi!");
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.print("Conectando ao WiFi: ");
+        Serial.println(String(wifi_ssid) + " / " + String(wifi_password));
     } else {
       Serial.println("Falha ao conectar ao WiFi!");
-      statusLED(254);
+      
     }
 }
 
 void connectToMQTT() {
     statusLED(2);
+    delay(500);
     mqttClient.setServer(mqtt_broker, mqtt_port);
   
     while (!mqttClient.connected()) {
@@ -114,9 +118,10 @@ void connectToMQTT() {
         mqttClient.setCallback(callback);
   
         Serial.println("Conectado ao Broker MQTT");
-        Serial.println("Inscrito no tópico: topico/teste");
+        Serial.print("Inscrito no tópico: ");
+        Serial.print(topic);
+        turnOffLEDs();
       } else {
-        statusLED(-1);
         Serial.println("Falha ao conectar ao Broker MQTT");
         Serial.print("Erro: ");
         Serial.println(mqttClient.state());
@@ -130,19 +135,14 @@ void statusLED(byte status){
     turnOffLEDs();
     switch (status)    {
     case 254: // ERROR       RED
-        for (int i = 0; i < 4; i++){
-            digitalWrite(STATUS_LED_R,!digitalRead(STATUS_LED_R));
-            delay(100);
-        }
+        digitalWrite(STATUS_LED_R,HIGH);
         break;
 
     case 1: // WIFI_CONNECTION      YELLOW
-        digitalWrite(STATUS_LED_R,HIGH);
         digitalWrite(STATUS_LED_G,HIGH);
         break;
 
     case 2: // MQTT_CONNECTION      PINK
-        digitalWrite(STATUS_LED_R,HIGH);
         digitalWrite(STATUS_LED_B,HIGH);
         break;
 
@@ -151,12 +151,11 @@ void statusLED(byte status){
         break;
 
     case 4: //BACKWARD              LIGHT BLUE
-        digitalWrite(STATUS_LED_G,HIGH);
-        digitalWrite(STATUS_LED_B,HIGH);
+        digitalWrite(STATUS_LED_R,HIGH);
         break;
 
     default:
-        for (int i = 0; i < 4; i++){
+        for (byte i = 0; i < 4; i++){
             digitalWrite(STATUS_LED_B,!digitalRead(STATUS_LED_B));
             delay(100);
         }
@@ -170,6 +169,16 @@ void turnOffLEDs(){
     digitalWrite(STATUS_LED_B, LOW);
 }
 
+void handleError(){
+    for(byte i = 0; i < 4; i++){
+        statusLED(254);
+        delay(100);
+        turnOffLEDs();
+        delay(100);
+    }
+    turnOffLEDs();
+    mqttClient.publish("esp_motor/status", "Valor invalido");
+}
 
 
 void callback(char *topic, byte *payload, unsigned int length)
@@ -181,20 +190,22 @@ void callback(char *topic, byte *payload, unsigned int length)
         char c = (char)payload[i];
         if (!isDigit(c))
         {
-            mqttClient.publish("esp_motor/status", "Valor invalido");
+            handleError();
             return;
         }
         message += c;
     }
 
     int speed = message.toInt();
-    if (speed > 0 && speed < 255)
+    if (speed >= 0 && speed < 255)
     {
         statusLED(3);
         ledcWrite(PWM_FORWARD, speed);
+        Serial.println(String("Velocidade alterada para: ") + speed);
     }
     else
-    {
-        mqttClient.publish("esp_motor/status", "Valor invalido");
+    {   
+        statusLED(3);
+        handleError();
     }
 }
