@@ -23,7 +23,8 @@
 void connectToWIFI();
 
 void callback(char *topic, byte *message, unsigned int length);
-void connectToBroker();
+void connectToMQTT();
+void connectToWiFi();
 void statusLED(byte status);
 void turnOffLEDs();
 
