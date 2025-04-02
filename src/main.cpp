@@ -1,143 +1,169 @@
+//!---------------------       Inclusões de bibliotecas     ---------------------
 #include <Arduino.h>
 #include <WiFi.h>
 #include "PubSubClient.h"
 #include "env.h"
 #include <WiFiClientSecure.h>
 
-#define GPIOPIN32 32
-#define GPIOPIN33 33
+//!---------------------       Definição dos pinos      ---------------------
+#define FORWARD_DIRECTION_PIN 32 //* Forward Direction
+#define BACKWARD_DIRECTION_PIN 33 //* Backward Direction
 
-#define STATUS_LED 2
+#define STATUS_LED_R 14
+#define STATUS_LED_G 27
+#define STATUS_LED_B 26
 
-#define PWM_CHANNEL_A 0
-#define PWM_CHANNEL_B 1
+#define PWM_FORWARD 0
+#define PWM_BACKWARD 1
 #define PWM_FREQ 500
 #define PWM_RESOLUTION 8
+
+//!---------------------       Cabeçalho de Funções     ---------------------
+
+void connectToWIFI();
+
+void callback(char *topic, byte *message, unsigned int length);
+void connectToBroker();
+void statusLED(byte status);
+void turnOffLEDs();
+
+//!---------------------       Definições de Constantes     ---------------------
 
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
 
 //Values set in /include/env.h
 
-const char *ssid = wifi_ssid;
-const char *pass = wifi_password;
+const char *WIFI_SSID = WIFI_SSID;
+const char *WIFI_PASSWORD = WIFI_PASSWORD;
 
-const char *broker = mqtt_broker;
+const char *MQTT_BROKER = MQTT_BROKER;
 
-const char *mqtt_user = mqtt_username;
-const char *mqtt_pass = mqtt_password;
+const char *MQTT_USER = MQTT_USER;
+const char *MQTT_PASS = MQTT_PASS;
 
-//----------------------------------------------
-
-const int port = 8883;
+const char *MQTT_BROKER = MQTT_BROKER;
+const int MQTT_PORT = MQTT_PORT;
 
 const char *topic = "esp_motor/speed";
 
-void connectToWIFI();
-
-void callback(char *topic, byte *message, unsigned int length);
-void connectToBroker();
-void statusBlink();
+//!---------------------       Loops Principais        ---------------------
 
 void setup()
 {
-    ledcSetup(PWM_CHANNEL_A, PWM_FREQ, PWM_RESOLUTION);
-    ledcSetup(PWM_CHANNEL_B, PWM_FREQ, PWM_RESOLUTION);
-    ledcAttachPin(GPIOPIN32, PWM_CHANNEL_A);
-    ledcAttachPin(GPIOPIN33, PWM_CHANNEL_B);
-    ledcWrite(PWM_CHANNEL_A, 0);
-    ledcWrite(PWM_CHANNEL_B, 0);
-
-    pinMode(STATUS_LED, OUTPUT); // LED de status
-    digitalWrite(STATUS_LED, LOW);
-
     Serial.begin(115200);
-
     // As the free tier of HiveMQ does not allow generating a CA, it is necessary to disable certificate verification
     client.setInsecure();
 
+    // H-Bridge
+    ledcSetup(PWM_FORWARD, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(PWM_BACKWARD, PWM_FREQ, PWM_RESOLUTION);
+    ledcAttachPin(FORWARD_DIRECTION_PIN, PWM_FORWARD);
+    ledcAttachPin(BACKWARD_DIRECTION_PIN, PWM_BACKWARD);
+    ledcWrite(PWM_FORWARD, 0);
+    ledcWrite(PWM_BACKWARD, 0);
+    digitalWrite(FORWARD_DIRECTION_PIN, LOW);
+    digitalWrite(BACKWARD_DIRECTION_PIN, LOW);
 
-    mqttClient.setServer(broker, port);
-    mqttClient.setCallback(callback);
+    // Status LED
+    pinMode(STATUS_LED_R, OUTPUT);
+    pinMode(STATUS_LED_G, OUTPUT);
+    pinMode(STATUS_LED_B, OUTPUT);
+    turnOffLEDs();
 
-    digitalWrite(GPIOPIN32, LOW);
-    digitalWrite(GPIOPIN33, LOW);
-    connectToWIFI();
-    connectToBroker();
+    connectToWiFi();
+    connectToMQTT();
 }
 
 void loop()
 {
     if (WiFi.status() != WL_CONNECTED)
     {
-        digitalWrite(STATUS_LED,LOW);
         connectToWIFI();
-    }
-    else
-    {
-        digitalWrite(STATUS_LED, HIGH);
     }
     if (!mqttClient.connected())
     {
-        digitalWrite(STATUS_LED,LOW);
         connectToBroker();
-    }
-    else
-    {
-        digitalWrite(STATUS_LED, HIGH);
     }
     mqttClient.loop();
 }
 
 /*-------------------------------------------------------------------------------*/
 
-void connectToWIFI()
-{
-    WiFi.begin(ssid, pass);
-    Serial.println("Connecting to Wifi...");
-
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        delay(1000);
-        Serial.print("Status: ");
-        Serial.println(WiFi.status());
+void connectToWiFi() {
+    statusLED(1);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    Serial.print("Conectando ao WiFi...");
+    while (!WiFi.isConnected()) {
+      delay(1000);
+      Serial.print(".");
     }
-    Serial.println("Wifi Connected");
-    statusBlink();
-}
-void statusBlink()
-{
-    for (int i = 0; i < 6; i++)
-    {
-        digitalWrite(STATUS_LED, !digitalRead(STATUS_LED));
-        delay(500);
+    if (WiFi.isConnected()) {
+      Serial.println("Conectado ao WiFi!");
+    } else {
+      Serial.println("Falha ao conectar ao WiFi!");
+      statusLED(-1);
     }
 }
 
-void connectToBroker()
-{
-    Serial.println("Connecting to the Broker...");
-    while (!mqttClient.connected())
-    {
-        String clientId = "ESP32-Servo-" + String(random(0xffff), HEX);
-        Serial.print("Attempting connection as ");
-        Serial.println(clientId);
-        if (mqttClient.connect(clientId.c_str(), mqtt_user, mqtt_pass))
-        {
-            Serial.println("Connected to the Broker!");
-            mqttClient.subscribe(topic);
-            Serial.print("Subscribed to topic: ");
-            Serial.println(topic);
-            statusBlink();
+void connectToMQTT() {
+    statusLED(2);
+    mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
+  
+    while (!mqttClient.connected()) {
+      Serial.print("Conectando ao Broker MQTT...");
+      if (mqttClient.connect(MQTT_ID, MQTT_USER, MQTT_PASS)) {
+        mqttClient.subscribe(topic);
+        mqttClient.setCallback(callback);
+  
+        Serial.println("Conectado ao Broker MQTT");
+        Serial.println("Inscrito no tópico: topico/teste");
+      } else {
+        statusLED(-1);
+        Serial.println("Falha ao conectar ao Broker MQTT");
+        Serial.print("Erro: ");
+        Serial.println(mqttClient.state());
+        delay(2000);
+        Serial.println("Tentando novamente...");
+      }
+    }
+  }
+
+void statusLED(byte status){   
+    turnOffLEDs();
+    switch (status)    {
+    case -1: // ERROR
+        for (int i = 0; i < 4; i++){
+            digitalWrite(STATUS_LED_R,!digitalRead(STATUS_LED_R));
+            delay(100);
         }
-        else
-        {
-            Serial.print("Connection failed, code: ");
-            Serial.println(mqttClient.state());
-            delay(5000); // Delay to prevent flooding
+        break;
+    case 1: // WIFI_CONNECTION
+        digitalWrite(STATUS_LED_R,HIGH);
+        digitalWrite(STATUS_LED_G,HIGH);
+        break;
+    case 2: // MQTT_CONNECTION
+        digitalWrite(STATUS_LED_R,HIGH);
+        digitalWrite(STATUS_LED_B,HIGH);
+        break;
+    
+
+    default:
+        for (int i = 0; i < 4; i++){
+            digitalWrite(STATUS_LED_B,!digitalRead(STATUS_LED_B));
+            delay(100);
         }
+        break;
     }
 }
+
+void turnOffLEDs(){
+    digitalWrite(STATUS_LED_R, LOW);
+    digitalWrite(STATUS_LED_G, LOW);
+    digitalWrite(STATUS_LED_B, LOW);
+}
+
+
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
@@ -157,7 +183,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     int speed = message.toInt();
     if (speed > 0 && speed < 255)
     {
-        ledcWrite(PWM_CHANNEL_A, speed);
+        ledcWrite(PWM_FORWARD, speed);
     }
     else
     {
