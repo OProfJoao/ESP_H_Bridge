@@ -43,7 +43,6 @@ PubSubClient mqttClient(client);
 const char *mqtt_broker = MQTT_BROKER_CONN;
 const char *mqtt_user = MQTT_USER_CONN;
 const char *mqtt_password = MQTT_PASSWORD_CONN;
-const char *mqtt_id = MQTT_ID_CONN;
 const int mqtt_port = MQTT_PORT_CONN;
 
 const char *wifi_ssid = WIFI_CONN_SSID;
@@ -51,7 +50,7 @@ const char *wifi_password = WIFI_CONN_PASSWORD;
 
 const char *topic = "esp_motor/speed";
 
-int *currentSpeed = 0;
+int currentSpeed = 0;
 
 //!---------------------       Loops Principais        ---------------------
 
@@ -128,7 +127,9 @@ void connectToMQTT() {
 
   while (!mqttClient.connected()) {
     Serial.print("Conectando ao Broker MQTT...");
-    if (mqttClient.connect(mqtt_id, mqtt_user, mqtt_password)) {
+    String mqtt_id = "ESP32Client-";
+    mqtt_id += String(random(0xffff), HEX);
+    if (mqttClient.connect(mqtt_id.c_str(), mqtt_user, mqtt_password)) {
       mqttClient.subscribe(topic);
       mqttClient.setCallback(callback);
 
@@ -206,14 +207,18 @@ void callback(char *topic, byte *payload, unsigned int length) {
   }
 
   int speed = message.toInt();
-  if (speed >= 0 && speed < 255) {
-    if (speed != *currentSpeed) {
-      *currentSpeed = speed;
+  if (speed > 0 && speed < 255) {
+    if (speed != currentSpeed) {
+      currentSpeed = speed;
       statusLED(3);
       ledcWrite(PWM_FORWARD, speed);
       Serial.println(String("Velocidade alterada para: ") + speed);
     }
-  } else {
+  } else if(speed == 0){
+    Serial.println(String("Velocidade alterada para: ") + speed);
+    ledcWrite(PWM_FORWARD, speed);
+    turnOffLEDs();
+  }else {
     handleError();
     statusLED(3);
   }
