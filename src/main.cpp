@@ -138,7 +138,7 @@ void statusLED(byte status){
             delay(100);
         }
         break;
-        
+
     case 1: // WIFI_CONNECTION      YELLOW
         digitalWrite(STATUS_LED_R,HIGH);
         digitalWrite(STATUS_LED_G,HIGH);
@@ -193,7 +193,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     int speed = message.toInt();
     if (speed > 0 && speed < 255)
     {
-
+        statusLED(3);
         ledcWrite(PWM_FORWARD, speed);
     }
     else
