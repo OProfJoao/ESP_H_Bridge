@@ -171,7 +171,7 @@ void statusLED(byte status) {
 
     default:
       for (byte i = 0; i < 4; i++) {
-        setLEDColor(0, 0, 255);  // Pisca azul
+        setLEDColor(0, 0, 255);  // erro no status (pisca azul)
         delay(100);
         turnOffLEDs();
         delay(100);
