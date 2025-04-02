@@ -102,7 +102,7 @@ void connectToWiFi() {
       Serial.println("Conectado ao WiFi!");
     } else {
       Serial.println("Falha ao conectar ao WiFi!");
-      statusLED(999);
+      statusLED(254);
     }
 }
 
@@ -132,7 +132,7 @@ void connectToMQTT() {
 void statusLED(byte status){   
     turnOffLEDs();
     switch (status)    {
-    case 999: // ERROR       RED
+    case 254: // ERROR       RED
         for (int i = 0; i < 4; i++){
             digitalWrite(STATUS_LED_R,!digitalRead(STATUS_LED_R));
             delay(100);
