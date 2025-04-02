@@ -9,16 +9,17 @@
 #define FORWARD_DIRECTION_PIN 32 //* Forward Direction
 #define BACKWARD_DIRECTION_PIN 33 //* Backward Direction
 
-#define STATUS_LED_R 14
-#define STATUS_LED_G 27
-#define STATUS_LED_B 26
+#define STATUS_LED_R 25
+#define STATUS_LED_G 26
+#define STATUS_LED_B 27
 
-#define PWM_LED_R 2
-#define PWM_LED_G 3
-#define PWM_LED_B 4
 
 #define PWM_FORWARD 0
 #define PWM_BACKWARD 1
+
+#define PWM_LED_R 2  
+#define PWM_LED_G 3  
+#define PWM_LED_B 4  
 
 
 #define PWM_FREQ 500
@@ -100,9 +101,9 @@ void loop()
 //!---------------------       Funções extras        ---------------------
 
 void setLEDColor(byte r, byte g, byte b) {
-    ledcWrite(PWM_LED_R, r - 255);
-    ledcWrite(PWM_LED_G, g - 255);
-    ledcWrite(PWM_LED_B, b - 255);
+    ledcWrite(PWM_LED_R, r);
+    ledcWrite(PWM_LED_G, g);
+    ledcWrite(PWM_LED_B, b);
 }
 
 void connectToWiFi() {
@@ -156,11 +157,11 @@ void statusLED(byte status){
             break;
     
         case 1: // 📶 Conectando ao Wi-Fi (Amarelo)
-            setLEDColor(255, 255, 0);
+            setLEDColor(150, 255, 0);
             break;
     
         case 2: // 🔗 Conectando ao MQTT (Rosa)
-            setLEDColor(255, 0, 255);
+            setLEDColor(150, 0, 255);
             break;
     
         case 3: // 🚗 Movendo para frente (Verde)
@@ -176,12 +177,14 @@ void statusLED(byte status){
             break;
     
         case 6: // ✅ Sistema pronto (Branco)
-            setLEDColor(255, 255, 255);
+            setLEDColor(150, 255, 255);
             break;
 
         default:
             for (byte i = 0; i < 4; i++){
-                digitalWrite(STATUS_LED_B,!digitalRead(STATUS_LED_B));
+                setLEDColor(0, 0, 255); // Pisca azul
+                delay(100);
+                turnOffLEDs();
                 delay(100);
             }
             break;
@@ -228,7 +231,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     }
     else
     {   
-        statusLED(3);
         handleError();
+        statusLED(3);
     }
 }
