@@ -202,7 +202,7 @@ void connectToMQTT() {
         Serial.print("Conectando ao Broker MQTT...");
         String NODE_ID = "NODE_1-";
         NODE_ID += String(random(0xffff), HEX);
-        if (mqttClient.connect(NODE_ID.c_str(), MQTT_USER_CONN, MQTT_PASSWORD_CONN)) {
+        if (mqttClient.connect(mqtt_id.c_str(), MQTT_USER_CONN, MQTT_PASSWORD_CONN)) {
             Serial.println("Conectado ao Broker MQTT");
 
 
