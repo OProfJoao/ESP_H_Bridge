@@ -4,9 +4,9 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 
-#include "DHT.h"
-#include "Adafruit_Sensor.h"
 #include "Ultrasonic.h"
+#include "ESP32SERVO.h"
+
 #include "PubSubClient.h"
 #include "env.h"
 
@@ -14,14 +14,6 @@
 
 #define PWM_FREQ 500
 #define PWM_RESOLUTION 8
-
-#define FORWARD_DIRECTION_PIN 32
-#define BACKWARD_DIRECTION_PIN 33 
-
-#define PWM_FORWARD 0
-#define PWM_BACKWARD 1
-
-
 
 #define STATUS_LED_R_PIN 25
 #define STATUS_LED_G_PIN 26
@@ -34,23 +26,25 @@
 
 
 //TODO: Configurar pinos corretos
-#define LDR_PIN 10      
-#define DHT_PIN 11
-#define ULTRA_ECHO 0
-#define ULTRA_TRIGG 1
+
+#define ULTRA_1_ECHO 0
+#define ULTRA_1_TRIGG 1
+
+#define ULTRA_2_ECHO 0
+#define ULTRA_2_TRIGG 1
 
 #define LEDPIN 30
 
+#define SERVO_PIN 10
 
 //!---------------------       Definições de variáveis     ---------------------
 
 //ultrasonic
-bool detected = false;
-unsigned long lastDetection = 0;
+bool ultra_1_detected = false;
+unsigned long ultra_1_lastDetection = 0;
 
-//dht
-unsigned long lastReading = 0;
-
+bool ultra_2_detected = false;
+unsigned long ultra_2_lastDetection = 0;
 
 //!---------------------       Cabeçalho de Funções     ---------------------
 
@@ -66,8 +60,10 @@ void handleError();
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
 
-Ultrasonic ultrasonic(ULTRA_TRIGG, ULTRA_ECHO);
-DHT dht(DHT_PIN, DHT11);
+Ultrasonic ultrasonic1(ULTRA_1_ECHO, ULTRA_1_TRIGG);
+Ultrasonic ultrasonic2(ULTRA_2_ECHO, ULTRA_2_TRIGG);
+
+Servo servo;
 
 
 
@@ -75,11 +71,10 @@ DHT dht(DHT_PIN, DHT11);
 //!---------------------       Definição dos tópicos        ---------------------
 
 //Publish
-const char* topicPresenceSensor = "ferrorama/station/presence";
-const char* topicTemperatureSensor = "ferrorama/station/temperature";
-const char* topicHumiditySensor = "ferrorama/station/humidity";
+const char* topicPresenceSensor2 = "ferrorama/station/presence2";
+const char* topicPresenceSensor4 = "ferrorama/station/presence4";
+
 const char* topicLuminanceSensor = "ferrorama/station/luminanceStatus";
-const char* topicTrainSpeed = "ferrorama/train/speed";
 
 
 //!---------------------       Loops Principais        ---------------------
@@ -90,18 +85,6 @@ void setup() {
     // to disable certificate verification
     client.setInsecure();
 
-    // H-Bridge
-    ledcSetup(PWM_FORWARD, PWM_FREQ, PWM_RESOLUTION);
-    ledcSetup(PWM_BACKWARD, PWM_FREQ, PWM_RESOLUTION);
-    ledcAttachPin(FORWARD_DIRECTION_PIN, PWM_FORWARD);
-    ledcAttachPin(BACKWARD_DIRECTION_PIN, PWM_BACKWARD);
-    ledcWrite(PWM_FORWARD, 0);
-    ledcWrite(PWM_BACKWARD, 0);
-    digitalWrite(FORWARD_DIRECTION_PIN, LOW);
-    digitalWrite(BACKWARD_DIRECTION_PIN, LOW);
-
-    //DHT11
-    dht.begin();
 
     // Status LED
     ledcSetup(PWM_LED_R, PWM_FREQ, PWM_RESOLUTION);
@@ -130,40 +113,32 @@ void loop() {
 
     unsigned long currentTime = millis();
 
-    //TODO: Read luminance sensor data and publish it to the luminance topic
-    byte luminanceValue = map(analogRead(LDR_PIN), 0, 4095, 0, 100);
-    if (luminanceValue < 80) {
-        mqttClient.publish(topicLuminanceSensor, String("1").c_str());
-    }
-    else {
-        mqttClient.publish(topicLuminanceSensor, String("0").c_str());
-    }
-
-    //TODO: Read temperatura/humidity sensor data and publish it to the temperatura/humidity topic 
-    float temperature = dht.readTemperature();
-    float humidity = dht.readHumidity();
-
-    if ((currentTime - lastReading > 2000) && (!isnan(temperature) || !isnan(humidity))) {
-        lastReading = currentTime;
-        mqttClient.publish(topicTemperatureSensor, String(temperature).c_str());
-        mqttClient.publish(topicHumiditySensor, String(humidity).c_str());
-    }
 
     //TODO: Read distance sensor data and publish it to the presence topic
-    long microsec = ultrasonic.timing();
-    float distance = ultrasonic.convert(microsec, Ultrasonic::CM);
-
-
-    if (distance < 10 && detected == false && (currentTime - lastDetection >= 3000)) {
-        mqttClient.publish(topicPresenceSensor, String("1").c_str());
-        detected = true;
-        lastDetection = currentTime;
+    long microsec = ultrasonic1.timing();
+    float distance = ultrasonic1.convert(microsec, Ultrasonic::CM);
+    if (distance < 10 && ultra_1_detected == false && (currentTime - ultra_1_lastDetection >= 3000)) {
+        mqttClient.publish(topicPresenceSensor2, String("1").c_str());
+        ultra_1_detected = true;
+        ultra_1_lastDetection = currentTime;
     }
-    if (distance > 10 && detected == true && (currentTime - lastDetection >= 3000)) {
-        detected = false;
-        lastDetection = currentTime;
+    if (distance > 10 && ultra_1_detected == true && (currentTime - ultra_1_lastDetection >= 3000)) {
+        ultra_1_detected = false;
+        ultra_1_lastDetection = currentTime;
     }
 
+
+    long microsec = ultrasonic2.timing();
+    float distance = ultrasonic2.convert(microsec, Ultrasonic::CM);
+    if (distance < 10 && ultra_2_detected == false && (currentTime - ultra_2_lastDetection >= 3000)) {
+        mqttClient.publish(topicPresenceSensor4, String("1").c_str());
+        ultra_2_detected = true;
+        ultra_2_lastDetection = currentTime;
+    }
+    if (distance > 10 && ultra_2_detected == true && (currentTime - ultra_2_lastDetection >= 3000)) {
+        ultra_2_detected = false;
+        ultra_2_lastDetection = currentTime;
+    }
 
 }
 
