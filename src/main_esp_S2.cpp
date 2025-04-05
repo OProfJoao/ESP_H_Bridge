@@ -54,6 +54,8 @@ void connectToWiFi();
 void statusLED(byte status);
 void turnOffLEDs();
 void handleError();
+void servoPosition(bool position);
+void nodeIlumination(bool status);
 
 //!---------------------       Definições de Constantes ---------------------
 
@@ -65,8 +67,9 @@ Ultrasonic ultrasonic2(ULTRA_2_ECHO, ULTRA_2_TRIGG);
 
 Servo servo;
 
-
-
+//TODO: Configurar valores corretos
+#define POSITION_0 120
+#define POSITION_1 60
 
 //!---------------------       Definição dos tópicos        ---------------------
 
@@ -85,6 +88,7 @@ void setup() {
     // As the free tier of HiveMQ does not allow generating a CA, it is necessary
     // to disable certificate verification
     client.setInsecure();
+
 
 
     // Status LED
@@ -271,9 +275,24 @@ void callback(char* topic, byte* payload, unsigned int length) {
                 statusLED(3);
             }
         }
+        if (topic == topicServoPosition) {
+            if (message == "1") {
+                servoPosition(1); //Acende os leds
+            }
+            else if (message == "0") {
+                servoPosition(0); //Apaga os leds
+            }
+            else {
+                handleError();
+                statusLED(3);
+            }
+        }
     }
 }
 
 void nodeIlumination(bool status) {
     digitalWrite(LEDPIN, status);
+}
+void servoPosition(bool position){
+
 }
