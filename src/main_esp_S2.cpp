@@ -101,6 +101,8 @@ void setup() {
     ledcAttachPin(STATUS_LED_B_PIN, PWM_LED_B);
     turnOffLEDs();
 
+    pinMode(LEDPIN, OUTPUT);
+
     nodeIlumination(0);
     delay(2000);
 }
@@ -118,10 +120,17 @@ void loop() {
 
     unsigned long currentTime = millis();
 
-
     //TODO: Read distance sensor data and publish it to the presence topic
-    long microsec = ultrasonic1.timing();
-    float distance = ultrasonic1.convert(microsec, Ultrasonic::CM);
+    readUltrasonic1(currentTime);
+    readUltrasonic2(currentTime);
+}
+
+//!---------------------       Funções extras        ---------------------
+
+void readUltrasonic1(unsigned long currentTime) {
+
+    long microsec1 = ultrasonic1.timing();
+    float distance = ultrasonic1.convert(microsec1, Ultrasonic::CM);
     if (distance < 10 && ultra_1_detected == false && (currentTime - ultra_1_lastDetection >= 3000)) {
         mqttClient.publish(topicPresenceSensor2, String("1").c_str());
         ultra_1_detected = true;
@@ -131,10 +140,12 @@ void loop() {
         ultra_1_detected = false;
         ultra_1_lastDetection = currentTime;
     }
+}
 
-
-    long microsec = ultrasonic2.timing();
-    float distance = ultrasonic2.convert(microsec, Ultrasonic::CM);
+void readUltrasonic2(unsigned long currentTime){
+    
+    long microsec2 = ultrasonic2.timing();
+    float distance = ultrasonic2.convert(microsec2, Ultrasonic::CM);
     if (distance < 10 && ultra_2_detected == false && (currentTime - ultra_2_lastDetection >= 3000)) {
         mqttClient.publish(topicPresenceSensor4, String("1").c_str());
         ultra_2_detected = true;
@@ -144,10 +155,8 @@ void loop() {
         ultra_2_detected = false;
         ultra_2_lastDetection = currentTime;
     }
-
 }
 
-//!---------------------       Funções extras        ---------------------
 
 void setLEDColor(byte r, byte g, byte b) {
     ledcWrite(PWM_LED_R, r);
@@ -263,7 +272,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
     
     if (!error) {
-        if (topic == topicLuminanceStatus) {
+        if (String(topic) == topicLuminanceStatus) {
             if (message == "1") {
                 nodeIlumination(1); //Acende os leds
             }
@@ -275,7 +284,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
                 statusLED(3);
             }
         }
-        if (topic == topicServoPosition) {
+        if (String(topic) == topicServoPosition) {
             if (message == "1") {
                 servoPosition(1); //Acende os leds
             }
