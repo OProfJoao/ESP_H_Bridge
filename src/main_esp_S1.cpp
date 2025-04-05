@@ -1,28 +1,56 @@
 //!---------------------       Inclusões de bibliotecas ---------------------
+
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 
+#include "DHT.h"
+#include "Adafruit_Sensor.h"
+#include "Ultrasonic.h"
 #include "PubSubClient.h"
 #include "env.h"
 
 //!---------------------       Definição dos pinos      ---------------------
-#define FORWARD_DIRECTION_PIN 32   //* Forward Direction
-#define BACKWARD_DIRECTION_PIN 33  //* Backward Direction
 
-#define STATUS_LED_R 25
-#define STATUS_LED_G 26
-#define STATUS_LED_B 27
+#define PWM_FREQ 500
+#define PWM_RESOLUTION 8
+
+#define FORWARD_DIRECTION_PIN 32
+#define BACKWARD_DIRECTION_PIN 33 
 
 #define PWM_FORWARD 0
 #define PWM_BACKWARD 1
+
+
+
+#define STATUS_LED_R_PIN 25
+#define STATUS_LED_G_PIN 26
+#define STATUS_LED_B_PIN 27
 
 #define PWM_LED_R 2
 #define PWM_LED_G 3
 #define PWM_LED_B 4
 
-#define PWM_FREQ 500
-#define PWM_RESOLUTION 8
+
+
+//TODO: Configurar pinos corretos
+#define LDR_PIN 10      
+#define DHT_PIN 11
+#define ULTRA_ECHO 0
+#define ULTRA_TRIGG 1
+
+#define LEDPIN 30
+
+
+//!---------------------       Definições de variáveis     ---------------------
+
+//ultrasonic
+bool detected = false;
+unsigned long lastDetection = 0;
+
+//dht
+unsigned long lastReading = 0;
+
 
 //!---------------------       Cabeçalho de Funções     ---------------------
 
@@ -32,28 +60,27 @@ void connectToWiFi();
 void statusLED(byte status);
 void turnOffLEDs();
 void handleError();
-void setSpeed(int speed);
 
 //!---------------------       Definições de Constantes ---------------------
 
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
 
+Ultrasonic ultrasonic(ULTRA_TRIGG, ULTRA_ECHO);
+DHT dht(DHT_PIN, DHT11);
 
 
-// Values set in /include/env.h
 
-const char* mqtt_broker = MQTT_BROKER_CONN;
-const char* mqtt_user = MQTT_USER_CONN;
-const char* mqtt_password = MQTT_PASSWORD_CONN;
-const int mqtt_port = MQTT_PORT_CONN;
 
-const char* wifi_ssid = WIFI_CONN_SSID;
-const char* wifi_password = WIFI_CONN_PASSWORD;
+//!---------------------       Definição dos tópicos        ---------------------
 
-const char* topic = "esp_motor/speed";
+//Publish
+const char* topicPresenceSensor = "ferrorama/station/presence";
+const char* topicTemperatureSensor = "ferrorama/station/temperature";
+const char* topicHumiditySensor = "ferrorama/station/humidity";
+const char* topicLuminanceSensor = "ferrorama/station/luminanceStatus";
+const char* topicTrainSpeed = "ferrorama/train/speed";
 
-int currentSpeed = 0;
 
 //!---------------------       Loops Principais        ---------------------
 
@@ -73,16 +100,20 @@ void setup() {
     digitalWrite(FORWARD_DIRECTION_PIN, LOW);
     digitalWrite(BACKWARD_DIRECTION_PIN, LOW);
 
-    // Status LED
+    //DHT11
+    dht.begin();
 
+    // Status LED
     ledcSetup(PWM_LED_R, PWM_FREQ, PWM_RESOLUTION);
     ledcSetup(PWM_LED_G, PWM_FREQ, PWM_RESOLUTION);
     ledcSetup(PWM_LED_B, PWM_FREQ, PWM_RESOLUTION);
 
-    ledcAttachPin(STATUS_LED_R, PWM_LED_R);
-    ledcAttachPin(STATUS_LED_G, PWM_LED_G);
-    ledcAttachPin(STATUS_LED_B, PWM_LED_B);
+    ledcAttachPin(STATUS_LED_R_PIN, PWM_LED_R);
+    ledcAttachPin(STATUS_LED_G_PIN, PWM_LED_G);
+    ledcAttachPin(STATUS_LED_B_PIN, PWM_LED_B);
     turnOffLEDs();
+
+    nodeIlumination(0);
     delay(2000);
 }
 
@@ -96,6 +127,44 @@ void loop() {
         connectToMQTT();
     }
     mqttClient.loop();
+
+    unsigned long currentTime = millis();
+
+    //TODO: Read luminance sensor data and publish it to the luminance topic
+    byte luminanceValue = map(analogRead(LDR_PIN), 0, 4095, 0, 100);
+    if (luminanceValue < 80) {
+        mqttClient.publish(topicLuminanceSensor, String("1").c_str());
+    }
+    else {
+        mqttClient.publish(topicLuminanceSensor, String("0").c_str());
+    }
+
+    //TODO: Read temperatura/humidity sensor data and publish it to the temperatura/humidity topic 
+    float temperature = dht.readTemperature();
+    float humidity = dht.readHumidity();
+
+    if ((currentTime - lastReading > 2000) && (!isnan(temperature) || !isnan(humidity))) {
+        lastReading = currentTime;
+        mqttClient.publish(topicTemperatureSensor, String(temperature).c_str());
+        mqttClient.publish(topicHumiditySensor, String(humidity).c_str());
+    }
+
+    //TODO: Read distance sensor data and publish it to the presence topic
+    long microsec = ultrasonic.timing();
+    float distance = ultrasonic.convert(microsec, Ultrasonic::CM);
+
+
+    if (distance < 10 && detected == false && (currentTime - lastDetection >= 3000)) {
+        mqttClient.publish(topicPresenceSensor, String("1").c_str());
+        detected = true;
+        lastDetection = currentTime;
+    }
+    if (distance > 10 && detected == true && (currentTime - lastDetection >= 3000)) {
+        detected = false;
+        lastDetection = currentTime;
+    }
+
+
 }
 
 //!---------------------       Funções extras        ---------------------
@@ -131,16 +200,16 @@ void connectToMQTT() {
 
     while (!mqttClient.connected()) {
         Serial.print("Conectando ao Broker MQTT...");
-
-        String NODE_ID = "NODE_TRAIN-";
+        String NODE_ID = "NODE_1-";
         NODE_ID += String(random(0xffff), HEX);
         if (mqttClient.connect(NODE_ID.c_str(), MQTT_USER_CONN, MQTT_PASSWORD_CONN)) {
-            mqttClient.subscribe(topic);
-            mqttClient.setCallback(callback);
-
             Serial.println("Conectado ao Broker MQTT");
+
+
+            mqttClient.subscribe(topicLuminanceSensor);
+            mqttClient.setCallback(callback);
             Serial.print("Inscrito no tópico: ");
-            Serial.print(topic);
+            Serial.print(topicLuminanceSensor);
             turnOffLEDs();
         }
         else {
@@ -197,54 +266,35 @@ void handleError() {
         delay(100);
     }
     turnOffLEDs();
-    mqttClient.publish("esp_motor/status", "Valor invalido");
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
     String message = "";
-
+    bool error = false;
     for (int i = 0; i < length; i++) {
         char c = (char)payload[i];
         if (!isDigit(c)) {
             handleError();
+            error = true;
             return;
         }
         message += c;
     }
 
-    int speed = message.toInt();
-    if (speed > -255 && speed < 255) {
-        if (speed != currentSpeed) {
-            currentSpeed = speed;
-            setSpeed(speed);
-            Serial.println(String("Velocidade alterada para: ") + speed);
+    if (!error) {
+        if (message == "1") {
+            nodeIlumination(1); //Acende os leds
+        }
+        else if (message == "0") {
+            nodeIlumination(0); //Apaga os leds
+        }
+        else {
+            handleError();
+            statusLED(3);
         }
     }
-  else {
-      handleError();
-      statusLED(3);
-  }
 }
 
-void setSpeed(int speed){
-    ledcWrite(PWM_FORWARD, 0);
-    ledcWrite(PWM_BACKWARD, 0);
-    delay(500);
-    if(speed > 0){
-        statusLED(3);
-        for(int i = 0; i <= speed; i++){
-            ledcWrite(PWM_FORWARD, i);
-            delay(5);
-        }
-    }else if (speed < 0){
-        statusLED(4);
-        for (int i = 0; i >= speed; i--) {
-            ledcWrite(PWM_BACKWARD, -i);
-            delay(5);
-        }
-    }else{
-        turnOffLEDs();
-        ledcWrite(PWM_FORWARD, 0);
-        ledcWrite(PWM_BACKWARD, 0);
-    }
+void nodeIlumination(bool status) {
+    digitalWrite(LEDPIN, status);
 }
