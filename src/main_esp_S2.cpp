@@ -68,8 +68,8 @@ Ultrasonic ultrasonic2(ULTRA_2_ECHO, ULTRA_2_TRIGG);
 Servo servo;
 
 //TODO: Configurar valores corretos
-#define POSITION_0 120
-#define POSITION_1 60
+#define POSITION_0_ANGLE 120
+#define POSITION_1_ANGLE 60
 
 //!---------------------       Definição dos tópicos        ---------------------
 
@@ -89,7 +89,7 @@ void setup() {
     // to disable certificate verification
     client.setInsecure();
 
-
+    servo.attach(SERVO_PIN);
 
     // Status LED
     ledcSetup(PWM_LED_R, PWM_FREQ, PWM_RESOLUTION);
@@ -293,6 +293,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void nodeIlumination(bool status) {
     digitalWrite(LEDPIN, status);
 }
-void servoPosition(bool position){
 
+void servoPosition(bool position){
+    if(position == 0){
+        statusLED(3);
+        servo.write(POSITION_0_ANGLE);
+    }
+    else{
+        statusLED(4);
+        servo.write(POSITION_1_ANGLE);
+    }
 }
