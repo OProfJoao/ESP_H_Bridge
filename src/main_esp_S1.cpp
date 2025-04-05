@@ -75,7 +75,7 @@ DHT dht(DHT_PIN, DHT11);
 //!---------------------       Definição dos tópicos        ---------------------
 
 //Publish
-const char* topicPresenceSensor = "ferrorama/station/presence";
+const char* topicPresenceSensor = "ferrorama/station/presence1";
 const char* topicTemperatureSensor = "ferrorama/station/temperature";
 const char* topicHumiditySensor = "ferrorama/station/humidity";
 const char* topicLuminanceSensor = "ferrorama/station/luminanceStatus";
