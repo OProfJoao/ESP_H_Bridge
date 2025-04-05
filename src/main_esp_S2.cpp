@@ -74,7 +74,8 @@ Servo servo;
 const char* topicPresenceSensor2 = "ferrorama/station/presence2";
 const char* topicPresenceSensor4 = "ferrorama/station/presence4";
 
-const char* topicLuminanceSensor = "ferrorama/station/luminanceStatus";
+const char* topicLuminanceStatus = "ferrorama/station/luminanceStatus";
+const char* topicServoPosition = "ferrorama/servo/position";
 
 
 //!---------------------       Loops Principais        ---------------------
@@ -181,10 +182,10 @@ void connectToMQTT() {
             Serial.println("Conectado ao Broker MQTT");
 
 
-            mqttClient.subscribe(topicLuminanceSensor);
+            mqttClient.subscribe(topicLuminanceStatus);
             mqttClient.setCallback(callback);
             Serial.print("Inscrito no tópico: ");
-            Serial.print(topicLuminanceSensor);
+            Serial.print(topicLuminanceStatus);
             turnOffLEDs();
         }
         else {
@@ -256,16 +257,19 @@ void callback(char* topic, byte* payload, unsigned int length) {
         message += c;
     }
 
+    
     if (!error) {
-        if (message == "1") {
-            nodeIlumination(1); //Acende os leds
-        }
-        else if (message == "0") {
-            nodeIlumination(0); //Apaga os leds
-        }
-        else {
-            handleError();
-            statusLED(3);
+        if (topic == topicLuminanceStatus) {
+            if (message == "1") {
+                nodeIlumination(1); //Acende os leds
+            }
+            else if (message == "0") {
+                nodeIlumination(0); //Apaga os leds
+            }
+            else {
+                handleError();
+                statusLED(3);
+            }
         }
     }
 }
