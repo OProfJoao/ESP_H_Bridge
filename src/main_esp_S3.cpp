@@ -25,8 +25,8 @@
 
 //TODO: Configurar pinos corretos
 
-#define ULTRA_1_ECHO 18
-#define ULTRA_1_TRIGG 19
+#define ULTRA_ECHO 26
+#define ULTRA_TRIGG 27
 
 
 #define LEDPIN 25
@@ -34,15 +34,15 @@
 #define SERVO_1_PIN 32
 #define SERVO_2_PIN 33
 
-#define STATUS_LED_R_PIN 14
-#define STATUS_LED_G_PIN 27
-#define STATUS_LED_B_PIN 26
+#define STATUS_LED_R_PIN 18
+#define STATUS_LED_G_PIN 19
+#define STATUS_LED_B_PIN 21
 
 //!---------------------       Definições de variáveis     ---------------------
 
 //ultrasonic
-bool ultra_1_detected = false;
-unsigned long ultra_1_lastDetection = 0;
+bool ultra_detected = false;
+unsigned long ultra_lastDetection = 0;
 
 
 
@@ -56,14 +56,14 @@ void turnOffLEDs();
 void handleError();
 void servoPosition(bool position, Servo& servo);
 void nodeIlumination(bool status);
-void readUltrasonic1(unsigned long currentTime);
+void readUltrasonic1();
 
 //!---------------------       Definições de Constantes ---------------------
 
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
 
-Ultrasonic ultrasonic1(ULTRA_1_ECHO, ULTRA_1_TRIGG);
+Ultrasonic ultrasonic(ULTRA_ECHO, ULTRA_TRIGG);
 
 
 Servo servo1;
@@ -122,29 +122,50 @@ void loop() {
     }
     mqttClient.loop();
 
-    unsigned long currentTime = millis();
+
 
     //TODO: Read distance sensor data and publish it to the presence topic
-    readUltrasonic1(currentTime);
+    unsigned long currentTime = millis();
+
+    Serial.print("Reading Distance sensor: ");
+    long microsec = ultrasonic.timing();
+    float distance = ultrasonic.convert(microsec, Ultrasonic::CM);
+    Serial.println(distance);
+
+    if (distance < 10 && ultra_detected == false && (currentTime - ultra_lastDetection >= 3000)) {
+        mqttClient.publish(topicPresenceSensor, String("1").c_str());
+        ultra_detected = true;
+        ultra_lastDetection = currentTime;
+    }
+    if (distance > 10 && ultra_detected == true && (currentTime - ultra_lastDetection >= 3000)) {
+        mqttClient.publish(topicPresenceSensor, String("0").c_str());
+        ultra_detected = false;
+        ultra_lastDetection = currentTime;
+    }
+
+    // Serial.print("Reading Distance sensor: ");
+    // long microsec = ultrasonic.timing();
+    // float distance = ultrasonic.convert(microsec, Ultrasonic::CM);
+    // Serial.println(distance);
+
+    // if (distance < 10 && detected == false && (currentTime - lastPresenceDetection >= 3000)) {
+    //     mqttClient.publish(topicPresenceSensor, String("1").c_str());
+    //     detected = true;
+    //     lastPresenceDetection = currentTime;
+    // }
+    // if (distance > 10 && detected == true && (currentTime - lastPresenceDetection >= 3000)) {
+    //     detected = false;
+    //     lastPresenceDetection = currentTime;
+    //     mqttClient.publish(topicPresenceSensor, String("0").c_str());
+    // }
+    // readUltrasonic1();
+    delay(500);
 }
 
 //!---------------------       Funções extras        ---------------------
 
-void readUltrasonic1(unsigned long currentTime) {
+void readUltrasonic1() {
 
-    long microsec1 = ultrasonic1.timing();
-    float distance = ultrasonic1.convert(microsec1, Ultrasonic::CM);
-    Serial.println("Ultrasonic: " + String(distance));
-    if (distance < 10 && ultra_1_detected == false && (currentTime - ultra_1_lastDetection >= 3000)) {
-        mqttClient.publish(topicPresenceSensor, String("1").c_str());
-        ultra_1_detected = true;
-        ultra_1_lastDetection = currentTime;
-    }
-    if (distance > 10 && ultra_1_detected == true && (currentTime - ultra_1_lastDetection >= 3000)) {
-        mqttClient.publish(topicPresenceSensor, String("0").c_str());
-        ultra_1_detected = false;
-        ultra_1_lastDetection = currentTime;
-    }
 }
 
 
@@ -180,17 +201,17 @@ void connectToMQTT() {
     mqttClient.setServer(MQTT_BROKER_CONN, MQTT_PORT_CONN);
 
     while (!mqttClient.connected()) {
-        Serial.print("Conectando ao Broker MQTT...");
+        Serial.println("Conectando ao Broker MQTT...");
         String NODE_ID = "NODE_1-";
         NODE_ID += String(random(0xffff), HEX);
         if (mqttClient.connect(NODE_ID.c_str(), MQTT_USER_CONN, MQTT_PASSWORD_CONN)) {
-            Serial.println("Conectado ao Broker MQTT");
+            Serial.println("Conectado ao Broker MQTT : " + String(NODE_ID));
 
 
             mqttClient.subscribe(topicLuminanceStatus);
             mqttClient.setCallback(callback);
             Serial.print("Inscrito no tópico: ");
-            Serial.print(topicLuminanceStatus);
+            Serial.println(topicLuminanceStatus);
             turnOffLEDs();
         }
         else {

@@ -125,12 +125,12 @@ void loop() {
     byte luminanceValue = map(analogRead(LDR_PIN), 0, 4095, 0, 100);
     Serial.println(luminanceValue);
 
-    if (luminanceValue < 10 && !lastLightStatus && (currentTime - lastLightReading > 1000)) {
+    if (luminanceValue < 10 && !lastLightStatus && (currentTime - lastLightReading > 5000)) {
         lastLightStatus = true;
         lastLightReading = currentTime;
         mqttClient.publish(topicLuminanceSensor, String("1").c_str());
     }
-    if (luminanceValue >= 10 && lastLightStatus && (currentTime - lastLightReading > 1000)) {
+    if (luminanceValue >= 10 && lastLightStatus && (currentTime - lastLightReading > 5000)) {
         lastLightStatus = false;
         lastLightReading = currentTime;
         mqttClient.publish(topicLuminanceSensor, String("0").c_str());
