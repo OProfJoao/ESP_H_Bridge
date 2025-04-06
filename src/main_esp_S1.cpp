@@ -15,12 +15,6 @@
 #define PWM_FREQ 500
 #define PWM_RESOLUTION 8
 
-
-
-#define STATUS_LED_R_PIN 32
-#define STATUS_LED_G_PIN 35
-#define STATUS_LED_B_PIN 34
-
 #define PWM_LED_R 2
 #define PWM_LED_G 3
 #define PWM_LED_B 4
@@ -33,17 +27,25 @@
 #define ULTRA_ECHO 26
 #define ULTRA_TRIGG 27
 
-#define LEDPIN 30
+#define LEDPIN 2
+
+#define STATUS_LED_R_PIN 18
+#define STATUS_LED_G_PIN 19
+#define STATUS_LED_B_PIN 21
 
 
 //!---------------------       Definições de variáveis     ---------------------
 
 //ultrasonic
 bool detected = false;
-unsigned long lastDetection = 0;
+unsigned long lastPresenceDetection = 0;
+
+//LDR
+unsigned long lastLightReading = 0;
+bool lastLightStatus = false;
 
 //dht
-unsigned long lastReading = 0;
+unsigned long lastTempReading = 0;
 
 
 //!---------------------       Cabeçalho de Funções     ---------------------
@@ -54,6 +56,8 @@ void connectToWiFi();
 void statusLED(byte status);
 void turnOffLEDs();
 void handleError();
+void nodeIlumination(bool status);
+
 
 //!---------------------       Definições de Constantes ---------------------
 
@@ -97,6 +101,8 @@ void setup() {
     ledcAttachPin(STATUS_LED_B_PIN, PWM_LED_B);
     turnOffLEDs();
 
+    pinMode(LEDPIN, OUTPUT);
+
     nodeIlumination(0);
     delay(2000);
 }
@@ -115,40 +121,55 @@ void loop() {
     unsigned long currentTime = millis();
 
     //TODO: Read luminance sensor data and publish it to the luminance topic
+    Serial.print("Reading Luminance sensor: ");
     byte luminanceValue = map(analogRead(LDR_PIN), 0, 4095, 0, 100);
-    if (luminanceValue < 80) {
+    Serial.println(luminanceValue);
+
+    if (luminanceValue < 10 && !lastLightStatus && (currentTime - lastLightReading > 1000)) {
+        lastLightStatus = true;
+        lastLightReading = currentTime;
         mqttClient.publish(topicLuminanceSensor, String("1").c_str());
     }
-    else {
+    if (luminanceValue >= 10 && lastLightStatus && (currentTime - lastLightReading > 1000)) {
+        lastLightStatus = false;
+        lastLightReading = currentTime;
         mqttClient.publish(topicLuminanceSensor, String("0").c_str());
     }
 
-    //TODO: Read temperatura/humidity sensor data and publish it to the temperatura/humidity topic 
-    float temperature = dht.readTemperature();
-    float humidity = dht.readHumidity();
 
-    if ((currentTime - lastReading > 2000) && (!isnan(temperature) || !isnan(humidity))) {
-        lastReading = currentTime;
-        mqttClient.publish(topicTemperatureSensor, String(temperature).c_str());
-        mqttClient.publish(topicHumiditySensor, String(humidity).c_str());
+    //TODO: Read temperatura/humidity sensor data and publish it to the temperatura/humidity topic 
+    if ((currentTime - lastTempReading > 3000)) {
+        Serial.print("Reading DHT sensor: ");
+        float temperature = dht.readTemperature();
+        float humidity = dht.readHumidity();
+        Serial.print(temperature); Serial.print(" | ");
+        Serial.println(humidity);
+        if ((!isnan(temperature) || !isnan(humidity))) {
+            lastTempReading = currentTime;
+            mqttClient.publish(topicTemperatureSensor, String(temperature).c_str());
+            mqttClient.publish(topicHumiditySensor, String(humidity).c_str());
+        }
     }
+
 
     //TODO: Read distance sensor data and publish it to the presence topic
+    Serial.print("Reading Distance sensor: ");
     long microsec = ultrasonic.timing();
     float distance = ultrasonic.convert(microsec, Ultrasonic::CM);
+    Serial.println(distance);
 
-
-    if (distance < 10 && detected == false && (currentTime - lastDetection >= 3000)) {
+    if (distance < 10 && detected == false && (currentTime - lastPresenceDetection >= 3000)) {
         mqttClient.publish(topicPresenceSensor, String("1").c_str());
         detected = true;
-        lastDetection = currentTime;
+        lastPresenceDetection = currentTime;
     }
-    if (distance > 10 && detected == true && (currentTime - lastDetection >= 3000)) {
+    if (distance > 10 && detected == true && (currentTime - lastPresenceDetection >= 3000)) {
         detected = false;
-        lastDetection = currentTime;
+        lastPresenceDetection = currentTime;
+        mqttClient.publish(topicPresenceSensor, String("0").c_str());
     }
-
-
+    delay(500);
+    Serial.println("\n\n");
 }
 
 //!---------------------       Funções extras        ---------------------
@@ -266,11 +287,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
     }
 
     if (!error) {
-        if (message == "1") {
-            nodeIlumination(1); //Acende os leds
+        Serial.print("Received on: ");
+        Serial.print(String(topic) + "=> ");
+        Serial.println(String(message));
+
+        if (String(message) == "1") {
+            nodeIlumination(true); //Acende os leds
         }
-        else if (message == "0") {
-            nodeIlumination(0); //Apaga os leds
+        else if (String(message) == "0") {
+            nodeIlumination(false); //Apaga os leds
         }
         else {
             handleError();
@@ -280,5 +305,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
 }
 
 void nodeIlumination(bool status) {
+    Serial.println(status);
     digitalWrite(LEDPIN, status);
 }
