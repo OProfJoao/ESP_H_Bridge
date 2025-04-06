@@ -4,9 +4,9 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 
-#include "DHT.h"
-#include "Adafruit_Sensor.h"
 #include "Ultrasonic.h"
+#include "ESP32SERVO.h"
+
 #include "PubSubClient.h"
 #include "env.h"
 
@@ -14,14 +14,6 @@
 
 #define PWM_FREQ 500
 #define PWM_RESOLUTION 8
-
-#define FORWARD_DIRECTION_PIN 32
-#define BACKWARD_DIRECTION_PIN 33 
-
-#define PWM_FORWARD 0
-#define PWM_BACKWARD 1
-
-
 
 #define STATUS_LED_R_PIN 25
 #define STATUS_LED_G_PIN 26
@@ -34,22 +26,22 @@
 
 
 //TODO: Configurar pinos corretos
-#define LDR_PIN 10      
-#define DHT_PIN 11
-#define ULTRA_ECHO 0
-#define ULTRA_TRIGG 1
+
+#define ULTRA_1_ECHO 0
+#define ULTRA_1_TRIGG 1
+
 
 #define LEDPIN 30
 
+#define SERVO_1_PIN 10
+#define SERVO_2_PIN 10
 
 //!---------------------       Definições de variáveis     ---------------------
 
 //ultrasonic
-bool detected = false;
-unsigned long lastDetection = 0;
+bool ultra_1_detected = false;
+unsigned long ultra_1_lastDetection = 0;
 
-//dht
-unsigned long lastReading = 0;
 
 
 //!---------------------       Cabeçalho de Funções     ---------------------
@@ -60,26 +52,33 @@ void connectToWiFi();
 void statusLED(byte status);
 void turnOffLEDs();
 void handleError();
+void servoPosition(bool position, Servo& servo);
+void nodeIlumination(bool status);
 
 //!---------------------       Definições de Constantes ---------------------
 
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
 
-Ultrasonic ultrasonic(ULTRA_TRIGG, ULTRA_ECHO);
-DHT dht(DHT_PIN, DHT11);
+Ultrasonic ultrasonic1(ULTRA_1_ECHO, ULTRA_1_TRIGG);
 
 
+Servo servo1;
+Servo servo2;
 
+//TODO: Configurar valores corretos
+#define POSITION_0_ANGLE 120
+#define POSITION_1_ANGLE 60
 
 //!---------------------       Definição dos tópicos        ---------------------
 
 //Publish
-const char* topicPresenceSensor = "ferrorama/station/presence";
-const char* topicTemperatureSensor = "ferrorama/station/temperature";
-const char* topicHumiditySensor = "ferrorama/station/humidity";
-const char* topicLuminanceSensor = "ferrorama/station/luminanceStatus";
-const char* topicTrainSpeed = "ferrorama/train/speed";
+const char* topicPresenceSensor = "ferrorama/station/presence3";
+
+
+const char* topicLuminanceStatus = "ferrorama/station/luminanceStatus";
+const char* topicServo1Position = "ferrorama/servo1/position";
+const char* topicServo2Position = "ferrorama/servo2/position";
 
 
 //!---------------------       Loops Principais        ---------------------
@@ -90,18 +89,8 @@ void setup() {
     // to disable certificate verification
     client.setInsecure();
 
-    // H-Bridge
-    ledcSetup(PWM_FORWARD, PWM_FREQ, PWM_RESOLUTION);
-    ledcSetup(PWM_BACKWARD, PWM_FREQ, PWM_RESOLUTION);
-    ledcAttachPin(FORWARD_DIRECTION_PIN, PWM_FORWARD);
-    ledcAttachPin(BACKWARD_DIRECTION_PIN, PWM_BACKWARD);
-    ledcWrite(PWM_FORWARD, 0);
-    ledcWrite(PWM_BACKWARD, 0);
-    digitalWrite(FORWARD_DIRECTION_PIN, LOW);
-    digitalWrite(BACKWARD_DIRECTION_PIN, LOW);
-
-    //DHT11
-    dht.begin();
+    servo1.attach(SERVO_1_PIN);
+    servo2.attach(SERVO_2_PIN);
 
     // Status LED
     ledcSetup(PWM_LED_R, PWM_FREQ, PWM_RESOLUTION);
@@ -112,6 +101,8 @@ void setup() {
     ledcAttachPin(STATUS_LED_G_PIN, PWM_LED_G);
     ledcAttachPin(STATUS_LED_B_PIN, PWM_LED_B);
     turnOffLEDs();
+
+    pinMode(LEDPIN, OUTPUT);
 
     nodeIlumination(0);
     delay(2000);
@@ -130,44 +121,29 @@ void loop() {
 
     unsigned long currentTime = millis();
 
-    //TODO: Read luminance sensor data and publish it to the luminance topic
-    byte luminanceValue = map(analogRead(LDR_PIN), 0, 4095, 0, 100);
-    if (luminanceValue < 80) {
-        mqttClient.publish(topicLuminanceSensor, String("1").c_str());
-    }
-    else {
-        mqttClient.publish(topicLuminanceSensor, String("0").c_str());
-    }
-
-    //TODO: Read temperatura/humidity sensor data and publish it to the temperatura/humidity topic 
-    float temperature = dht.readTemperature();
-    float humidity = dht.readHumidity();
-
-    if ((currentTime - lastReading > 2000) && (!isnan(temperature) || !isnan(humidity))) {
-        lastReading = currentTime;
-        mqttClient.publish(topicTemperatureSensor, String(temperature).c_str());
-        mqttClient.publish(topicHumiditySensor, String(humidity).c_str());
-    }
-
     //TODO: Read distance sensor data and publish it to the presence topic
-    long microsec = ultrasonic.timing();
-    float distance = ultrasonic.convert(microsec, Ultrasonic::CM);
-
-
-    if (distance < 10 && detected == false && (currentTime - lastDetection >= 3000)) {
-        mqttClient.publish(topicPresenceSensor, String("1").c_str());
-        detected = true;
-        lastDetection = currentTime;
-    }
-    if (distance > 10 && detected == true && (currentTime - lastDetection >= 3000)) {
-        detected = false;
-        lastDetection = currentTime;
-    }
-
-
+    readUltrasonic1(currentTime);
 }
 
 //!---------------------       Funções extras        ---------------------
+
+void readUltrasonic1(unsigned long currentTime) {
+
+    long microsec1 = ultrasonic1.timing();
+    float distance = ultrasonic1.convert(microsec1, Ultrasonic::CM);
+    if (distance < 10 && ultra_1_detected == false && (currentTime - ultra_1_lastDetection >= 3000)) {
+        mqttClient.publish(topicPresenceSensor, String("1").c_str());
+        ultra_1_detected = true;
+        ultra_1_lastDetection = currentTime;
+    }
+    if (distance > 10 && ultra_1_detected == true && (currentTime - ultra_1_lastDetection >= 3000)) {
+        ultra_1_detected = false;
+        ultra_1_lastDetection = currentTime;
+    }
+}
+
+
+
 
 void setLEDColor(byte r, byte g, byte b) {
     ledcWrite(PWM_LED_R, r);
@@ -206,10 +182,10 @@ void connectToMQTT() {
             Serial.println("Conectado ao Broker MQTT");
 
 
-            mqttClient.subscribe(topicLuminanceSensor);
+            mqttClient.subscribe(topicLuminanceStatus);
             mqttClient.setCallback(callback);
             Serial.print("Inscrito no tópico: ");
-            Serial.print(topicLuminanceSensor);
+            Serial.print(topicLuminanceStatus);
             turnOffLEDs();
         }
         else {
@@ -281,20 +257,58 @@ void callback(char* topic, byte* payload, unsigned int length) {
         message += c;
     }
 
+
     if (!error) {
-        if (message == "1") {
-            nodeIlumination(1); //Acende os leds
+        if (String(topic) == topicLuminanceStatus) {
+            if (message == "1") {
+                nodeIlumination(1); //Acende os leds
+            }
+            else if (message == "0") {
+                nodeIlumination(0); //Apaga os leds
+            }
+            else {
+                handleError();
+                statusLED(3);
+            }
         }
-        else if (message == "0") {
-            nodeIlumination(0); //Apaga os leds
+        if (String(topic) == topicServo1Position) {
+            if (message == "1") {
+                servoPosition(1, servo1); //Acende os leds
+            }
+            else if (message == "0") {
+                servoPosition(0, servo1); //Apaga os leds
+            }
+            else {
+                handleError();
+                statusLED(3);
+            }
         }
-        else {
-            handleError();
-            statusLED(3);
+        if (String(topic) == topicServo2Position) {
+            if (message == "1") {
+                servoPosition(1, servo2); //Acende os leds
+            }
+            else if (message == "0") {
+                servoPosition(0, servo2); //Apaga os leds
+            }
+            else {
+                handleError();
+                statusLED(3);
+            }
         }
     }
 }
 
 void nodeIlumination(bool status) {
     digitalWrite(LEDPIN, status);
+}
+
+void servoPosition(bool position, Servo& servo) {
+    if (position == 0) {
+        statusLED(3);
+        servo.write(POSITION_0_ANGLE);
+    }
+    else {
+        statusLED(4);
+        servo.write(POSITION_1_ANGLE);
+    }
 }
