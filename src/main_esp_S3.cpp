@@ -15,9 +15,7 @@
 #define PWM_FREQ 500
 #define PWM_RESOLUTION 8
 
-#define STATUS_LED_R_PIN 25
-#define STATUS_LED_G_PIN 26
-#define STATUS_LED_B_PIN 27
+
 
 #define PWM_LED_R 2
 #define PWM_LED_G 3
@@ -27,14 +25,18 @@
 
 //TODO: Configurar pinos corretos
 
-#define ULTRA_1_ECHO 0
-#define ULTRA_1_TRIGG 1
+#define ULTRA_1_ECHO 18
+#define ULTRA_1_TRIGG 19
 
 
-#define LEDPIN 30
+#define LEDPIN 25
 
-#define SERVO_1_PIN 10
-#define SERVO_2_PIN 10
+#define SERVO_1_PIN 32
+#define SERVO_2_PIN 33
+
+#define STATUS_LED_R_PIN 14
+#define STATUS_LED_G_PIN 27
+#define STATUS_LED_B_PIN 26
 
 //!---------------------       Definições de variáveis     ---------------------
 
@@ -54,6 +56,7 @@ void turnOffLEDs();
 void handleError();
 void servoPosition(bool position, Servo& servo);
 void nodeIlumination(bool status);
+void readUltrasonic1(unsigned long currentTime);
 
 //!---------------------       Definições de Constantes ---------------------
 
@@ -131,12 +134,14 @@ void readUltrasonic1(unsigned long currentTime) {
 
     long microsec1 = ultrasonic1.timing();
     float distance = ultrasonic1.convert(microsec1, Ultrasonic::CM);
+    Serial.println("Ultrasonic: " + String(distance));
     if (distance < 10 && ultra_1_detected == false && (currentTime - ultra_1_lastDetection >= 3000)) {
         mqttClient.publish(topicPresenceSensor, String("1").c_str());
         ultra_1_detected = true;
         ultra_1_lastDetection = currentTime;
     }
     if (distance > 10 && ultra_1_detected == true && (currentTime - ultra_1_lastDetection >= 3000)) {
+        mqttClient.publish(topicPresenceSensor, String("0").c_str());
         ultra_1_detected = false;
         ultra_1_lastDetection = currentTime;
     }
@@ -261,10 +266,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
     if (!error) {
         if (String(topic) == topicLuminanceStatus) {
             if (message == "1") {
-                nodeIlumination(1); //Acende os leds
+                nodeIlumination(true); //Acende os leds
             }
             else if (message == "0") {
-                nodeIlumination(0); //Apaga os leds
+                nodeIlumination(false); //Apaga os leds
             }
             else {
                 handleError();
@@ -272,6 +277,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
             }
         }
         if (String(topic) == topicServo1Position) {
+            Serial.println("LightStatus: " + String(message));
             if (message == "1") {
                 servoPosition(1, servo1); //Acende os leds
             }
