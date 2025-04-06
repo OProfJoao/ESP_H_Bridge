@@ -15,17 +15,11 @@
 #define PWM_FREQ 500
 #define PWM_RESOLUTION 8
 
-#define FORWARD_DIRECTION_PIN 32
-#define BACKWARD_DIRECTION_PIN 33 
-
-#define PWM_FORWARD 0
-#define PWM_BACKWARD 1
 
 
-
-#define STATUS_LED_R_PIN 25
-#define STATUS_LED_G_PIN 26
-#define STATUS_LED_B_PIN 27
+#define STATUS_LED_R_PIN 32
+#define STATUS_LED_G_PIN 35
+#define STATUS_LED_B_PIN 34
 
 #define PWM_LED_R 2
 #define PWM_LED_G 3
@@ -34,10 +28,10 @@
 
 
 //TODO: Configurar pinos corretos
-#define LDR_PIN 10      
-#define DHT_PIN 11
-#define ULTRA_ECHO 0
-#define ULTRA_TRIGG 1
+#define LDR_PIN 33      
+#define DHT_PIN 25
+#define ULTRA_ECHO 26
+#define ULTRA_TRIGG 27
 
 #define LEDPIN 30
 
@@ -89,16 +83,6 @@ void setup() {
     // As the free tier of HiveMQ does not allow generating a CA, it is necessary
     // to disable certificate verification
     client.setInsecure();
-
-    // H-Bridge
-    ledcSetup(PWM_FORWARD, PWM_FREQ, PWM_RESOLUTION);
-    ledcSetup(PWM_BACKWARD, PWM_FREQ, PWM_RESOLUTION);
-    ledcAttachPin(FORWARD_DIRECTION_PIN, PWM_FORWARD);
-    ledcAttachPin(BACKWARD_DIRECTION_PIN, PWM_BACKWARD);
-    ledcWrite(PWM_FORWARD, 0);
-    ledcWrite(PWM_BACKWARD, 0);
-    digitalWrite(FORWARD_DIRECTION_PIN, LOW);
-    digitalWrite(BACKWARD_DIRECTION_PIN, LOW);
 
     //DHT11
     dht.begin();
