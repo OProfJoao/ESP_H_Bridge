@@ -9,6 +9,7 @@
 
 #include "PubSubClient.h"
 #include "env.h"
+#include "topics.h"
 
 //!---------------------       Definição dos pinos      ---------------------
 
@@ -76,12 +77,12 @@ Servo servo2;
 //!---------------------       Definição dos tópicos        ---------------------
 
 //Publish
-const char* topicPresenceSensor = "ferrorama/station/presence3";
+// const char* topicPresenceSensor = "ferrorama/station/presence3";
 
 
-const char* topicLuminanceStatus = "ferrorama/station/luminanceStatus";
-const char* topicServo1Position = "ferrorama/servo1/position";
-const char* topicServo2Position = "ferrorama/servo2/position";
+// const char* topicLuminanceStatus = "ferrorama/station/luminanceStatus";
+// const char* topicServo1Position = "ferrorama/servo1/position";
+// const char* topicServo2Position = "ferrorama/servo2/position";
 
 
 //!---------------------       Loops Principais        ---------------------
@@ -133,12 +134,12 @@ void loop() {
     Serial.println(distance);
 
     if (distance < 10 && ultra_detected == false && (currentTime - ultra_lastDetection >= 3000)) {
-        mqttClient.publish(topicPresenceSensor, String("1").c_str());
+        mqttClient.publish(topicPresenceSensor3, String("1").c_str());
         ultra_detected = true;
         ultra_lastDetection = currentTime;
     }
     if (distance > 10 && ultra_detected == true && (currentTime - ultra_lastDetection >= 3000)) {
-        mqttClient.publish(topicPresenceSensor, String("0").c_str());
+        mqttClient.publish(topicPresenceSensor3, String("0").c_str());
         ultra_detected = false;
         ultra_lastDetection = currentTime;
     }
@@ -208,10 +209,10 @@ void connectToMQTT() {
             Serial.println("Conectado ao Broker MQTT : " + String(NODE_ID));
 
 
-            mqttClient.subscribe(topicLuminanceStatus);
+            mqttClient.subscribe(topicLuminanceSensor);
             mqttClient.setCallback(callback);
             Serial.print("Inscrito no tópico: ");
-            Serial.println(topicLuminanceStatus);
+            Serial.println(topicLuminanceSensor);
             turnOffLEDs();
         }
         else {
@@ -285,7 +286,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 
     if (!error) {
-        if (String(topic) == topicLuminanceStatus) {
+        if (String(topic) == topicLuminanceSensor) {
             if (message == "1") {
                 nodeIlumination(true); //Acende os leds
             }
@@ -297,7 +298,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
                 statusLED(3);
             }
         }
-        if (String(topic) == topicServo1Position) {
+        if (String(topic) == topicServoPosition2) {
             Serial.println("LightStatus: " + String(message));
             if (message == "1") {
                 servoPosition(1, servo1); //Acende os leds
@@ -310,7 +311,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
                 statusLED(3);
             }
         }
-        if (String(topic) == topicServo2Position) {
+        if (String(topic) == topicServoPosition3) {
             if (message == "1") {
                 servoPosition(1, servo2); //Acende os leds
             }

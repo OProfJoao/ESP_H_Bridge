@@ -5,6 +5,7 @@
 
 #include "PubSubClient.h"
 #include "env.h"
+#include "topics.h"
 
 //!---------------------       Definição dos pinos      ---------------------
 #define FORWARD_DIRECTION_PIN 32   //* Forward Direction
@@ -50,8 +51,6 @@ const int mqtt_port = MQTT_PORT_CONN;
 
 const char* wifi_ssid = WIFI_CONN_SSID;
 const char* wifi_password = WIFI_CONN_PASSWORD;
-
-const char* topic = "esp_motor/speed";
 
 int currentSpeed = 0;
 
@@ -135,12 +134,12 @@ void connectToMQTT() {
         String NODE_ID = "NODE_TRAIN-";
         NODE_ID += String(random(0xffff), HEX);
         if (mqttClient.connect(NODE_ID.c_str(), MQTT_USER_CONN, MQTT_PASSWORD_CONN)) {
-            mqttClient.subscribe(topic);
+            mqttClient.subscribe(topicTrainSpeed);
             mqttClient.setCallback(callback);
 
             Serial.println("Conectado ao Broker MQTT");
             Serial.print("Inscrito no tópico: ");
-            Serial.print(topic);
+            Serial.print(topicTrainSpeed);
             turnOffLEDs();
         }
         else {
@@ -197,7 +196,7 @@ void handleError() {
         delay(100);
     }
     turnOffLEDs();
-    mqttClient.publish("esp_motor/status", "Valor invalido");
+    mqttClient.publish(topicTrainStatus, "Valor invalido");
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {

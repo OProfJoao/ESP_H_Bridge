@@ -9,6 +9,7 @@
 #include "Ultrasonic.h"
 #include "PubSubClient.h"
 #include "env.h"
+#include "topics.h"
 
 //!---------------------       Definição dos pinos      ---------------------
 
@@ -73,11 +74,11 @@ DHT dht(DHT_PIN, DHT11);
 //!---------------------       Definição dos tópicos        ---------------------
 
 //Publish
-const char* topicPresenceSensor = "ferrorama/station/presence1";
-const char* topicTemperatureSensor = "ferrorama/station/temperature";
-const char* topicHumiditySensor = "ferrorama/station/humidity";
-const char* topicLuminanceSensor = "ferrorama/station/luminanceStatus";
-const char* topicTrainSpeed = "ferrorama/train/speed";
+// const char* topicPresenceSensor = "ferrorama/station/presence1";
+// const char* topicTemperatureSensor = "ferrorama/station/temperature";
+// const char* topicHumiditySensor = "ferrorama/station/humidity";
+// const char* topicLuminanceSensor = "ferrorama/station/luminanceStatus";
+// const char* topicTrainSpeed = "ferrorama/train/speed";
 
 
 //!---------------------       Loops Principais        ---------------------
@@ -159,14 +160,14 @@ void loop() {
     Serial.println(distance);
 
     if (distance < 10 && detected == false && (currentTime - lastPresenceDetection >= 3000)) {
-        mqttClient.publish(topicPresenceSensor, String("1").c_str());
+        mqttClient.publish(topicPresenceSensor1, String("1").c_str());
         detected = true;
         lastPresenceDetection = currentTime;
     }
     if (distance > 10 && detected == true && (currentTime - lastPresenceDetection >= 3000)) {
         detected = false;
         lastPresenceDetection = currentTime;
-        mqttClient.publish(topicPresenceSensor, String("0").c_str());
+        mqttClient.publish(topicPresenceSensor1, String("0").c_str());
     }
     delay(500);
     Serial.println("\n\n");

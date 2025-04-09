@@ -9,6 +9,7 @@
 
 #include "PubSubClient.h"
 #include "env.h"
+#include "topics.h"
 
 //!---------------------       Definição dos pinos      ---------------------
 
@@ -74,11 +75,11 @@ Servo servo;
 //!---------------------       Definição dos tópicos        ---------------------
 
 //Publish
-const char* topicPresenceSensor2 = "ferrorama/station/presence2";
-const char* topicPresenceSensor4 = "ferrorama/station/presence4";
+// const char* topicPresenceSensor2 = "ferrorama/station/presence2";
+// const char* topicPresenceSensor4 = "ferrorama/station/presence4";
 
-const char* topicLuminanceStatus = "ferrorama/station/luminanceStatus";
-const char* topicServoPosition = "ferrorama/servo/position";
+// const char* topicLuminanceStatus = "ferrorama/station/luminanceStatus";
+// const char* topicServoPosition = "ferrorama/servo/position";
 
 
 //!---------------------       Loops Principais        ---------------------
@@ -195,10 +196,10 @@ void connectToMQTT() {
             Serial.println("Conectado ao Broker MQTT");
 
 
-            mqttClient.subscribe(topicLuminanceStatus);
+            mqttClient.subscribe(topicLuminanceSensor);
             mqttClient.setCallback(callback);
             Serial.print("Inscrito no tópico: ");
-            Serial.print(topicLuminanceStatus);
+            Serial.print(topicLuminanceSensor);
             turnOffLEDs();
         }
         else {
@@ -272,7 +273,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
     
     if (!error) {
-        if (String(topic) == topicLuminanceStatus) {
+        if (String(topic) == topicLuminanceSensor) {
             if (message == "1") {
                 nodeIlumination(1); //Acende os leds
             }
@@ -284,12 +285,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
                 statusLED(3);
             }
         }
-        if (String(topic) == topicServoPosition) {
+        if (String(topic) == topicServoPosition1) {
             if (message == "1") {
-                servoPosition(1); //Acende os leds
+                servoPosition(1); 
             }
             else if (message == "0") {
-                servoPosition(0); //Apaga os leds
+                servoPosition(0); 
             }
             else {
                 handleError();
