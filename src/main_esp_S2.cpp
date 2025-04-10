@@ -42,6 +42,8 @@ void turnOffLEDs();
 void handleError();
 void servoPosition(bool position);
 void nodeIlumination(bool status);
+void readUltrasonic1(unsigned long currentTime);
+void readUltrasonic2(unsigned long currentTime);
 
 //!---------------------       Definições de Constantes ---------------------
 
