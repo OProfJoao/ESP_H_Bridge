@@ -114,8 +114,8 @@ void readUltrasonic1(unsigned long currentTime) {
     }
 }
 
-void readUltrasonic2(unsigned long currentTime){
-    
+void readUltrasonic2(unsigned long currentTime) {
+
     long microsec2 = ultrasonic2.timing();
     float distance = ultrasonic2.convert(microsec2, Ultrasonic::CM);
     if (distance < 10 && ultra_2_detected == false && (currentTime - ultra_2_lastDetection >= 3000)) {
@@ -242,7 +242,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
         message += c;
     }
 
-    
+
     if (!error) {
         if (String(topic) == topicLuminanceSensor) {
             if (message == "1") {
@@ -258,10 +258,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
         }
         if (String(topic) == topicServoPosition1) {
             if (message == "1") {
-                servoPosition(1); 
+                servoPosition(1);
             }
             else if (message == "0") {
-                servoPosition(0); 
+                servoPosition(0);
             }
             else {
                 handleError();
@@ -275,12 +275,12 @@ void nodeIlumination(bool status) {
     digitalWrite(LEDPIN, status);
 }
 
-void servoPosition(bool position){
-    if(position == 0){
+void servoPosition(bool position) {
+    if (position == 0) {
         statusLED(3);
         servo.write(POSITION_0_ANGLE);
     }
-    else{
+    else {
         statusLED(4);
         servo.write(POSITION_1_ANGLE);
     }

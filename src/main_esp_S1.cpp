@@ -56,14 +56,6 @@ PubSubClient mqttClient(client);
 Ultrasonic ultrasonic(ULTRA_1_TRIGG, ULTRA_1_ECHO);
 DHT dht(DHT_PIN, DHT11);
 
-
-
-
-
-
-
-
-
 //!---------------------       Loops Principais        ---------------------
 
 void setup() {
