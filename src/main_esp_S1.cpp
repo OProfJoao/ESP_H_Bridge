@@ -16,9 +16,13 @@
 #define PWM_FREQ 500
 #define PWM_RESOLUTION 8
 
-#define PWM_LED_R 2
-#define PWM_LED_G 3
-#define PWM_LED_B 4
+#define STATUS_LED_R_PIN 25
+#define STATUS_LED_G_PIN 26
+#define STATUS_LED_B_PIN 27
+
+#define PWM_CHANNEL_LED_R 2
+#define PWM_CHANNEL_LED_G 3
+#define PWM_CHANNEL_LED_B 4
 
 
 
@@ -30,9 +34,7 @@
 
 #define LEDPIN 2
 
-#define STATUS_LED_R_PIN 18
-#define STATUS_LED_G_PIN 19
-#define STATUS_LED_B_PIN 21
+
 
 
 //!---------------------       Definições de variáveis     ---------------------
@@ -93,13 +95,13 @@ void setup() {
     dht.begin();
 
     // Status LED
-    ledcSetup(PWM_LED_R, PWM_FREQ, PWM_RESOLUTION);
-    ledcSetup(PWM_LED_G, PWM_FREQ, PWM_RESOLUTION);
-    ledcSetup(PWM_LED_B, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(PWM_CHANNEL_LED_R, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(PWM_CHANNEL_LED_G, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(PWM_CHANNEL_LED_B, PWM_FREQ, PWM_RESOLUTION);
 
-    ledcAttachPin(STATUS_LED_R_PIN, PWM_LED_R);
-    ledcAttachPin(STATUS_LED_G_PIN, PWM_LED_G);
-    ledcAttachPin(STATUS_LED_B_PIN, PWM_LED_B);
+    ledcAttachPin(STATUS_LED_R_PIN, PWM_CHANNEL_LED_R);
+    ledcAttachPin(STATUS_LED_G_PIN, PWM_CHANNEL_LED_G);
+    ledcAttachPin(STATUS_LED_B_PIN, PWM_CHANNEL_LED_B);
     turnOffLEDs();
 
     pinMode(LEDPIN, OUTPUT);
@@ -176,9 +178,9 @@ void loop() {
 //!---------------------       Funções extras        ---------------------
 
 void setLEDColor(byte r, byte g, byte b) {
-    ledcWrite(PWM_LED_R, r);
-    ledcWrite(PWM_LED_G, g);
-    ledcWrite(PWM_LED_B, b);
+    ledcWrite(PWM_CHANNEL_LED_R, r);
+    ledcWrite(PWM_CHANNEL_LED_G, g);
+    ledcWrite(PWM_CHANNEL_LED_B, b);
 }
 
 void connectToWiFi() {

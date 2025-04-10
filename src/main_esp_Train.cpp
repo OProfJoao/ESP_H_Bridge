@@ -1,4 +1,5 @@
 //!---------------------       Inclusões de bibliotecas ---------------------
+
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
@@ -8,22 +9,29 @@
 #include "topics.h"
 
 //!---------------------       Definição dos pinos      ---------------------
-#define FORWARD_DIRECTION_PIN 32   //* Forward Direction
-#define BACKWARD_DIRECTION_PIN 33  //* Backward Direction
+
+#define PWM_FREQ 500
+#define PWM_RESOLUTION 8
 
 #define STATUS_LED_R_PIN 25
 #define STATUS_LED_G_PIN 26
 #define STATUS_LED_B_PIN 27
 
+#define PWM_CHANNEL_LED_R 2
+#define PWM_CHANNEL_LED_G 3
+#define PWM_CHANNEL_LED_B 4
+
+#define FORWARD_DIRECTION_PIN 32   
+#define BACKWARD_DIRECTION_PIN 33  
+
+
+
 #define PWM_FORWARD 0
 #define PWM_BACKWARD 1
 
-#define PWM_LED_R 2
-#define PWM_LED_G 3
-#define PWM_LED_B 4
 
-#define PWM_FREQ 500
-#define PWM_RESOLUTION 8
+
+
 
 //!---------------------       Cabeçalho de Funções     ---------------------
 
@@ -74,13 +82,13 @@ void setup() {
 
     // Status LED
 
-    ledcSetup(PWM_LED_R, PWM_FREQ, PWM_RESOLUTION);
-    ledcSetup(PWM_LED_G, PWM_FREQ, PWM_RESOLUTION);
-    ledcSetup(PWM_LED_B, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(PWM_CHANNEL_LED_R, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(PWM_CHANNEL_LED_G, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(PWM_CHANNEL_LED_B, PWM_FREQ, PWM_RESOLUTION);
 
-    ledcAttachPin(STATUS_LED_R_PIN, PWM_LED_R);
-    ledcAttachPin(STATUS_LED_G_PIN, PWM_LED_G);
-    ledcAttachPin(STATUS_LED_B_PIN, PWM_LED_B);
+    ledcAttachPin(STATUS_LED_R_PIN, PWM_CHANNEL_LED_R);
+    ledcAttachPin(STATUS_LED_G_PIN, PWM_CHANNEL_LED_G);
+    ledcAttachPin(STATUS_LED_B_PIN, PWM_CHANNEL_LED_B);
     turnOffLEDs();
     delay(2000);
 }
@@ -100,9 +108,9 @@ void loop() {
 //!---------------------       Funções extras        ---------------------
 
 void setLEDColor(byte r, byte g, byte b) {
-    ledcWrite(PWM_LED_R, r);
-    ledcWrite(PWM_LED_G, g);
-    ledcWrite(PWM_LED_B, b);
+    ledcWrite(PWM_CHANNEL_LED_R, r);
+    ledcWrite(PWM_CHANNEL_LED_G, g);
+    ledcWrite(PWM_CHANNEL_LED_B, b);
 }
 
 void connectToWiFi() {
