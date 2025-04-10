@@ -10,11 +10,11 @@
 #include "PubSubClient.h"
 #include "env.h"
 
-#include "topics.h"         //*Definição dos tópicos
-#include "pinout_config.h"  //*Definição dos pinos
+#include "topics.h"         //* MQTT topics
+#include "pinout_config.h"  //* Pinout
 
 
-//!---------------------       Definições de variáveis     ---------------------
+//!---------------------       Definições de variáveis globais   ---------------------
 
 //ultrasonic
 bool detected = false;

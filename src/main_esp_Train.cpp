@@ -7,10 +7,12 @@
 #include "PubSubClient.h"
 #include "env.h"
 
-#include "topics.h"         //*Definição dos tópicos
-#include "pinout_config.h"  //*Definição dos pinos
+#include "topics.h"         //* MQTT topics
+#include "pinout_config.h"  //* Pinout
 
+//!---------------------       Definições de variáveis globais   ---------------------
 
+int currentSpeed = 0;
 
 //!---------------------       Cabeçalho de Funções     ---------------------
 
@@ -26,20 +28,6 @@ void setSpeed(int speed);
 
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
-
-
-
-// Values set in /include/env.h
-
-const char* mqtt_broker = MQTT_BROKER_CONN;
-const char* mqtt_user = MQTT_USER_CONN;
-const char* mqtt_password = MQTT_PASSWORD_CONN;
-const int mqtt_port = MQTT_PORT_CONN;
-
-const char* wifi_ssid = WIFI_CONN_SSID;
-const char* wifi_password = WIFI_CONN_PASSWORD;
-
-int currentSpeed = 0;
 
 //!---------------------       Loops Principais        ---------------------
 
@@ -206,29 +194,31 @@ void callback(char* topic, byte* payload, unsigned int length) {
             Serial.println(String("Velocidade alterada para: ") + speed);
         }
     }
-  else {
-      handleError();
-      statusLED(3);
-  }
+    else {
+        handleError();
+        statusLED(3);
+    }
 }
 
-void setSpeed(int speed){
+void setSpeed(int speed) {
     ledcWrite(PWM_CHANNEL_FORWARD, 0);
     ledcWrite(PWM_CHANNEL_BACKWARD, 0);
     delay(500);
-    if(speed > 0){
+    if (speed > 0) {
         statusLED(3);
-        for(int i = 0; i <= speed; i++){
+        for (int i = 0; i <= speed; i++) {
             ledcWrite(PWM_CHANNEL_FORWARD, i);
             delay(5);
         }
-    }else if (speed < 0){
+    }
+    else if (speed < 0) {
         statusLED(4);
         for (int i = 0; i >= speed; i--) {
             ledcWrite(PWM_CHANNEL_BACKWARD, -i);
             delay(5);
         }
-    }else{
+    }
+    else {
         turnOffLEDs();
         ledcWrite(PWM_CHANNEL_FORWARD, 0);
         ledcWrite(PWM_CHANNEL_BACKWARD, 0);

@@ -10,12 +10,11 @@
 #include "PubSubClient.h"
 #include "env.h"
 
-#include "topics.h"         //*Definição dos tópicos
-#include "pinout_config.h"  //*Definição dos pinos
+#include "topics.h"         //* MQTT topics
+#include "pinout_config.h"  //* Pinout
 
-//!---------------------       Definições de variáveis     ---------------------
+//!---------------------       Definições de variáveis globais   ---------------------
 
-//ultrasonic
 bool ultra_detected = false;
 unsigned long ultra_lastDetection = 0;
 
@@ -41,21 +40,6 @@ Ultrasonic ultrasonic(ULTRA_1_ECHO, ULTRA_1_ECHO);
 
 Servo servo1;
 Servo servo2;
-
-//TODO: Configurar valores corretos
-#define POSITION_0_ANGLE 120
-#define POSITION_1_ANGLE 60
-
-//!---------------------       Definição dos tópicos        ---------------------
-
-//Publish
-// const char* topicPresenceSensor = "ferrorama/station/presence3";
-
-
-// const char* topicLuminanceStatus = "ferrorama/station/luminanceStatus";
-// const char* topicServo1Position = "ferrorama/servo1/position";
-// const char* topicServo2Position = "ferrorama/servo2/position";
-
 
 //!---------------------       Loops Principais        ---------------------
 
