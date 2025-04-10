@@ -24,8 +24,6 @@
 #define PWM_CHANNEL_LED_G 3
 #define PWM_CHANNEL_LED_B 4
 
-
-
 //TODO: Configurar pinos corretos
 
 #define ULTRA_ECHO 26

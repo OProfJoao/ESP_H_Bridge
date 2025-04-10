@@ -21,16 +21,13 @@
 #define PWM_CHANNEL_LED_G 3
 #define PWM_CHANNEL_LED_B 4
 
+
+
 #define FORWARD_DIRECTION_PIN 32   
 #define BACKWARD_DIRECTION_PIN 33  
 
-
-
 #define PWM_FORWARD 0
 #define PWM_BACKWARD 1
-
-
-
 
 
 //!---------------------       Cabeçalho de Funções     ---------------------
