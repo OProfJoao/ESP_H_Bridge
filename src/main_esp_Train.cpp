@@ -6,28 +6,10 @@
 
 #include "PubSubClient.h"
 #include "env.h"
-#include "topics.h"
 
-//!---------------------       Definição dos pinos      ---------------------
+#include "topics.h"         //*Definição dos tópicos
+#include "pinout_config.h"  //*Definição dos pinos
 
-#define PWM_FREQ 500
-#define PWM_RESOLUTION 8
-
-#define STATUS_LED_R_PIN 25
-#define STATUS_LED_G_PIN 26
-#define STATUS_LED_B_PIN 27
-
-#define PWM_CHANNEL_LED_R 2
-#define PWM_CHANNEL_LED_G 3
-#define PWM_CHANNEL_LED_B 4
-
-
-
-#define FORWARD_DIRECTION_PIN 32   
-#define BACKWARD_DIRECTION_PIN 33  
-
-#define PWM_FORWARD 0
-#define PWM_BACKWARD 1
 
 
 //!---------------------       Cabeçalho de Funções     ---------------------
@@ -68,12 +50,12 @@ void setup() {
     client.setInsecure();
 
     // H-Bridge
-    ledcSetup(PWM_FORWARD, PWM_FREQ, PWM_RESOLUTION);
-    ledcSetup(PWM_BACKWARD, PWM_FREQ, PWM_RESOLUTION);
-    ledcAttachPin(FORWARD_DIRECTION_PIN, PWM_FORWARD);
-    ledcAttachPin(BACKWARD_DIRECTION_PIN, PWM_BACKWARD);
-    ledcWrite(PWM_FORWARD, 0);
-    ledcWrite(PWM_BACKWARD, 0);
+    ledcSetup(PWM_CHANNEL_FORWARD, PWM_FREQ, PWM_RESOLUTION);
+    ledcSetup(PWM_CHANNEL_BACKWARD, PWM_FREQ, PWM_RESOLUTION);
+    ledcAttachPin(FORWARD_DIRECTION_PIN, PWM_CHANNEL_FORWARD);
+    ledcAttachPin(BACKWARD_DIRECTION_PIN, PWM_CHANNEL_BACKWARD);
+    ledcWrite(PWM_CHANNEL_FORWARD, 0);
+    ledcWrite(PWM_CHANNEL_BACKWARD, 0);
     digitalWrite(FORWARD_DIRECTION_PIN, LOW);
     digitalWrite(BACKWARD_DIRECTION_PIN, LOW);
 
@@ -231,24 +213,24 @@ void callback(char* topic, byte* payload, unsigned int length) {
 }
 
 void setSpeed(int speed){
-    ledcWrite(PWM_FORWARD, 0);
-    ledcWrite(PWM_BACKWARD, 0);
+    ledcWrite(PWM_CHANNEL_FORWARD, 0);
+    ledcWrite(PWM_CHANNEL_BACKWARD, 0);
     delay(500);
     if(speed > 0){
         statusLED(3);
         for(int i = 0; i <= speed; i++){
-            ledcWrite(PWM_FORWARD, i);
+            ledcWrite(PWM_CHANNEL_FORWARD, i);
             delay(5);
         }
     }else if (speed < 0){
         statusLED(4);
         for (int i = 0; i >= speed; i--) {
-            ledcWrite(PWM_BACKWARD, -i);
+            ledcWrite(PWM_CHANNEL_BACKWARD, -i);
             delay(5);
         }
     }else{
         turnOffLEDs();
-        ledcWrite(PWM_FORWARD, 0);
-        ledcWrite(PWM_BACKWARD, 0);
+        ledcWrite(PWM_CHANNEL_FORWARD, 0);
+        ledcWrite(PWM_CHANNEL_BACKWARD, 0);
     }
 }

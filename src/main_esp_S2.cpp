@@ -9,34 +9,9 @@
 
 #include "PubSubClient.h"
 #include "env.h"
-#include "topics.h"
 
-//!---------------------       Definição dos pinos      ---------------------
-
-#define PWM_FREQ 500
-#define PWM_RESOLUTION 8
-
-#define STATUS_LED_R_PIN 25
-#define STATUS_LED_G_PIN 26
-#define STATUS_LED_B_PIN 27
-
-#define PWM_CHANNEL_LED_R 2
-#define PWM_CHANNEL_LED_G 3
-#define PWM_CHANNEL_LED_B 4
-
-
-
-//TODO: Configurar pinos corretos
-
-#define ULTRA_1_ECHO 0
-#define ULTRA_1_TRIGG 1
-
-#define ULTRA_2_ECHO 0
-#define ULTRA_2_TRIGG 1
-
-#define LEDPIN 30
-
-#define SERVO_PIN 10
+#include "topics.h"         //*Definição dos tópicos
+#include "pinout_config.h"  //*Definição dos pinos
 
 //!---------------------       Definições de variáveis     ---------------------
 
@@ -90,7 +65,7 @@ void setup() {
     // to disable certificate verification
     client.setInsecure();
 
-    servo.attach(SERVO_PIN);
+    servo.attach(SERVO_1_PIN);
 
     // Status LED
     ledcSetup(PWM_CHANNEL_LED_R, PWM_FREQ, PWM_RESOLUTION);

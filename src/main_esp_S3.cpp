@@ -9,40 +9,15 @@
 
 #include "PubSubClient.h"
 #include "env.h"
-#include "topics.h"
 
-//!---------------------       Definição dos pinos      ---------------------
-
-#define PWM_FREQ 500
-#define PWM_RESOLUTION 8
-
-#define STATUS_LED_R_PIN 25
-#define STATUS_LED_G_PIN 26
-#define STATUS_LED_B_PIN 27
-
-#define PWM_CHANNEL_LED_R 2
-#define PWM_CHANNEL_LED_G 3
-#define PWM_CHANNEL_LED_B 4
-
-//TODO: Configurar pinos corretos
-
-#define ULTRA_ECHO 26
-#define ULTRA_TRIGG 27
-
-
-#define LEDPIN 25
-
-#define SERVO_1_PIN 32
-#define SERVO_2_PIN 33
-
+#include "topics.h"         //*Definição dos tópicos
+#include "pinout_config.h"  //*Definição dos pinos
 
 //!---------------------       Definições de variáveis     ---------------------
 
 //ultrasonic
 bool ultra_detected = false;
 unsigned long ultra_lastDetection = 0;
-
-
 
 //!---------------------       Cabeçalho de Funções     ---------------------
 
@@ -61,7 +36,7 @@ void readUltrasonic1();
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
 
-Ultrasonic ultrasonic(ULTRA_ECHO, ULTRA_TRIGG);
+Ultrasonic ultrasonic(ULTRA_1_ECHO, ULTRA_1_ECHO);
 
 
 Servo servo1;

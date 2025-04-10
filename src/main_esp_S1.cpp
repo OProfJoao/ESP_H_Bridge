@@ -9,32 +9,9 @@
 #include "Ultrasonic.h"
 #include "PubSubClient.h"
 #include "env.h"
-#include "topics.h"
 
-//!---------------------       Definição dos pinos      ---------------------
-
-#define PWM_FREQ 500
-#define PWM_RESOLUTION 8
-
-#define STATUS_LED_R_PIN 25
-#define STATUS_LED_G_PIN 26
-#define STATUS_LED_B_PIN 27
-
-#define PWM_CHANNEL_LED_R 2
-#define PWM_CHANNEL_LED_G 3
-#define PWM_CHANNEL_LED_B 4
-
-
-
-//TODO: Configurar pinos corretos
-#define LDR_PIN 33      
-#define DHT_PIN 25
-#define ULTRA_ECHO 26
-#define ULTRA_TRIGG 27
-
-#define LEDPIN 2
-
-
+#include "topics.h"         //*Definição dos tópicos
+#include "pinout_config.h"  //*Definição dos pinos
 
 
 //!---------------------       Definições de variáveis     ---------------------
@@ -67,7 +44,7 @@ void nodeIlumination(bool status);
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
 
-Ultrasonic ultrasonic(ULTRA_TRIGG, ULTRA_ECHO);
+Ultrasonic ultrasonic(ULTRA_1_TRIGG, ULTRA_1_ECHO);
 DHT dht(DHT_PIN, DHT11);
 
 
