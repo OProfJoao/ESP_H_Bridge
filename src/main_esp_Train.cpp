@@ -11,9 +11,9 @@
 #define FORWARD_DIRECTION_PIN 32   //* Forward Direction
 #define BACKWARD_DIRECTION_PIN 33  //* Backward Direction
 
-#define STATUS_LED_R 25
-#define STATUS_LED_G 26
-#define STATUS_LED_B 27
+#define STATUS_LED_R_PIN 25
+#define STATUS_LED_G_PIN 26
+#define STATUS_LED_B_PIN 27
 
 #define PWM_FORWARD 0
 #define PWM_BACKWARD 1
@@ -78,9 +78,9 @@ void setup() {
     ledcSetup(PWM_LED_G, PWM_FREQ, PWM_RESOLUTION);
     ledcSetup(PWM_LED_B, PWM_FREQ, PWM_RESOLUTION);
 
-    ledcAttachPin(STATUS_LED_R, PWM_LED_R);
-    ledcAttachPin(STATUS_LED_G, PWM_LED_G);
-    ledcAttachPin(STATUS_LED_B, PWM_LED_B);
+    ledcAttachPin(STATUS_LED_R_PIN, PWM_LED_R);
+    ledcAttachPin(STATUS_LED_G_PIN, PWM_LED_G);
+    ledcAttachPin(STATUS_LED_B_PIN, PWM_LED_B);
     turnOffLEDs();
     delay(2000);
 }
