@@ -19,6 +19,10 @@
 #define POSITION_0_ANGLE 120
 #define POSITION_1_ANGLE 60
 
+
+
+//*---------------------    Physical Pins   ---------------------
+
 //* ---- RGB LED ----
 #define STATUS_LED_R_PIN 25
 #define STATUS_LED_G_PIN 26

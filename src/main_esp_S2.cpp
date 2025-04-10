@@ -13,6 +13,17 @@
 #include "topics.h"         //* MQTT topics
 #include "pinout_config.h"  //* Pinout
 
+//?---------------------    Periféricos neste ESP   ---------------------
+
+//?     ULTRASSONICO1
+//?     ULTRASSONICO2
+
+//?     SERVO1
+
+//?     LED STATUS
+//?     LED ILUMINAÇÃO
+
+
 //!---------------------       Definições de variáveis globais   ---------------------
 
 bool ultra_1_detected = false;

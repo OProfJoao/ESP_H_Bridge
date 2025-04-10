@@ -13,6 +13,15 @@
 #include "topics.h"         //* MQTT topics
 #include "pinout_config.h"  //* Pinout
 
+//?---------------------    Periféricos neste ESP   ---------------------
+
+//?     LDR
+//?     DHT
+//?     ULTRASSONICO
+
+//?     LED STATUS
+//?     LED ILUMINAÇÃO
+
 
 //!---------------------       Definições de variáveis globais   ---------------------
 
@@ -50,14 +59,9 @@ DHT dht(DHT_PIN, DHT11);
 
 
 
-//!---------------------       Definição dos tópicos        ---------------------
 
-//Publish
-// const char* topicPresenceSensor = "ferrorama/station/presence1";
-// const char* topicTemperatureSensor = "ferrorama/station/temperature";
-// const char* topicHumiditySensor = "ferrorama/station/humidity";
-// const char* topicLuminanceSensor = "ferrorama/station/luminanceStatus";
-// const char* topicTrainSpeed = "ferrorama/train/speed";
+
+
 
 
 //!---------------------       Loops Principais        ---------------------
