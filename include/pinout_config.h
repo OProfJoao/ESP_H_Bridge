@@ -24,13 +24,14 @@
 //*---------------------    Physical Pins   ---------------------
 
 //* ---- RGB LED ----
-#define STATUS_LED_R_PIN 25
-#define STATUS_LED_G_PIN 26
-#define STATUS_LED_B_PIN 27
+#define STATUS_LED_R_PIN 21
+#define STATUS_LED_G_PIN 22
+#define STATUS_LED_B_PIN 23
 
 //* ---- Ultrasonic Sensors ----
 #define ULTRA_1_ECHO 26
 #define ULTRA_1_TRIGG 27
+
 
 #define ULTRA_2_ECHO 0
 #define ULTRA_2_TRIGG 1
