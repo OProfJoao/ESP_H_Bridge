@@ -81,7 +81,7 @@ void setup() {
 
 void loop() {
     if (WiFi.status() != WL_CONNECTED) {
-        handleError();
+        handleError(); 
         connectToWiFi();
     }
     if (!mqttClient.connected()) {
