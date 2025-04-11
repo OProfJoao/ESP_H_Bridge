@@ -26,8 +26,8 @@
 
 //!---------------------       Definições de variáveis globais   ---------------------
 
-bool ultra_detected = false;
-unsigned long ultra_lastDetection = 0;
+bool detected = false;
+unsigned long lastPresenceDetection = 0;
 
 //!---------------------       Cabeçalho de Funções     ---------------------
 
@@ -46,7 +46,7 @@ void readUltrasonic1();
 WiFiClientSecure client;
 PubSubClient mqttClient(client);
 
-Ultrasonic ultrasonic(ULTRA_1_ECHO, ULTRA_1_ECHO);
+Ultrasonic ultrasonic(ULTRA_1_TRIGG, ULTRA_1_ECHO);
 
 
 Servo servo1;
@@ -91,43 +91,25 @@ void loop() {
     mqttClient.loop();
 
 
-
-    //TODO: Read distance sensor data and publish it to the presence topic
     unsigned long currentTime = millis();
-
+    //TODO: Read distance sensor data and publish it to the presence topic
     Serial.print("Reading Distance sensor: ");
     long microsec = ultrasonic.timing();
     float distance = ultrasonic.convert(microsec, Ultrasonic::CM);
     Serial.println(distance);
 
-    if (distance < 10 && ultra_detected == false && (currentTime - ultra_lastDetection >= 3000)) {
+    if (distance < 10 && detected == false && (currentTime - lastPresenceDetection >= 3000)) {
         mqttClient.publish(topicPresenceSensor3, String("1").c_str());
-        ultra_detected = true;
-        ultra_lastDetection = currentTime;
+        detected = true;
+        lastPresenceDetection = currentTime;
     }
-    if (distance > 10 && ultra_detected == true && (currentTime - ultra_lastDetection >= 3000)) {
+    if (distance > 10 && detected == true && (currentTime - lastPresenceDetection >= 3000)) {
+        detected = false;
+        lastPresenceDetection = currentTime;
         mqttClient.publish(topicPresenceSensor3, String("0").c_str());
-        ultra_detected = false;
-        ultra_lastDetection = currentTime;
     }
-
-    // Serial.print("Reading Distance sensor: ");
-    // long microsec = ultrasonic.timing();
-    // float distance = ultrasonic.convert(microsec, Ultrasonic::CM);
-    // Serial.println(distance);
-
-    // if (distance < 10 && detected == false && (currentTime - lastPresenceDetection >= 3000)) {
-    //     mqttClient.publish(topicPresenceSensor, String("1").c_str());
-    //     detected = true;
-    //     lastPresenceDetection = currentTime;
-    // }
-    // if (distance > 10 && detected == true && (currentTime - lastPresenceDetection >= 3000)) {
-    //     detected = false;
-    //     lastPresenceDetection = currentTime;
-    //     mqttClient.publish(topicPresenceSensor, String("0").c_str());
-    // }
-    // readUltrasonic1();
     delay(500);
+    Serial.println("\n\n");
 }
 
 //!---------------------       Funções extras        ---------------------
@@ -180,6 +162,16 @@ void connectToMQTT() {
             mqttClient.setCallback(callback);
             Serial.print("Inscrito no tópico: ");
             Serial.println(topicLuminanceSensor);
+
+            mqttClient.subscribe(topicServoPosition2);
+            mqttClient.setCallback(callback);
+            Serial.print("Inscrito no tópico: ");
+            Serial.println(topicServoPosition2);
+
+            mqttClient.subscribe(topicServoPosition3);
+            mqttClient.setCallback(callback);
+            Serial.print("Inscrito no tópico: ");
+            Serial.println(topicServoPosition3);
             turnOffLEDs();
         }
         else {
@@ -212,7 +204,7 @@ void statusLED(byte status) {
         break;
 
     case 4:  // Movendo para trás (Ciano)
-        setLEDColor(0, 255, 255);
+        setLEDColor(0, 150, 255);
         break;
 
     default:

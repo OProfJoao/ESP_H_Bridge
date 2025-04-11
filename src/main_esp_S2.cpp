@@ -97,6 +97,7 @@ void loop() {
     //TODO: Read distance sensor data and publish it to the presence topic
     readUltrasonic1(currentTime);
     readUltrasonic2(currentTime);
+    delay(500);
 }
 
 //!---------------------       Funções extras        ---------------------
@@ -111,6 +112,7 @@ void readUltrasonic1(unsigned long currentTime) {
         ultra_1_lastDetection = currentTime;
     }
     if (distance > 10 && ultra_1_detected == true && (currentTime - ultra_1_lastDetection >= 3000)) {
+        mqttClient.publish(topicPresenceSensor2, String("0").c_str());
         ultra_1_detected = false;
         ultra_1_lastDetection = currentTime;
     }
@@ -126,6 +128,7 @@ void readUltrasonic2(unsigned long currentTime) {
         ultra_2_lastDetection = currentTime;
     }
     if (distance > 10 && ultra_2_detected == true && (currentTime - ultra_2_lastDetection >= 3000)) {
+        mqttClient.publish(topicPresenceSensor4, String("0").c_str());
         ultra_2_detected = false;
         ultra_2_lastDetection = currentTime;
     }
@@ -172,7 +175,12 @@ void connectToMQTT() {
             mqttClient.subscribe(topicLuminanceSensor);
             mqttClient.setCallback(callback);
             Serial.print("Inscrito no tópico: ");
-            Serial.print(topicLuminanceSensor);
+            Serial.println(topicLuminanceSensor);
+
+            mqttClient.subscribe(topicServoPosition1);
+            mqttClient.setCallback(callback);
+            Serial.print("Inscrito no tópico: ");
+            Serial.println(topicServoPosition1);
             turnOffLEDs();
         }
         else {
@@ -205,7 +213,7 @@ void statusLED(byte status) {
         break;
 
     case 4:  // Movendo para trás (Ciano)
-        setLEDColor(0, 255, 255);
+        setLEDColor(0, 150, 255);
         break;
 
     default:
@@ -243,14 +251,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
         }
         message += c;
     }
+    Serial.println(String(topic) + ": " + String(message));
 
 
     if (!error) {
         if (String(topic) == topicLuminanceSensor) {
-            if (message == "1") {
+            if (String(message) == "1") {
                 nodeIlumination(1); //Acende os leds
             }
-            else if (message == "0") {
+            else if (String(message) == "0") {
                 nodeIlumination(0); //Apaga os leds
             }
             else {
@@ -259,15 +268,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
             }
         }
         if (String(topic) == topicServoPosition1) {
-            if (message == "1") {
+            if (String(message) == "1") {
                 servoPosition(1);
             }
-            else if (message == "0") {
+            else if (String(message) == "0") {
                 servoPosition(0);
             }
             else {
                 handleError();
-                statusLED(3);
             }
         }
     }

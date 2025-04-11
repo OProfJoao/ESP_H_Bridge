@@ -33,12 +33,12 @@
 #define ULTRA_1_TRIGG 27
 
 
-#define ULTRA_2_ECHO 14
-#define ULTRA_2_TRIGG 15
+#define ULTRA_2_ECHO 18
+#define ULTRA_2_TRIGG 5
 
 //* ---- Sensors ----
 #define LDR_PIN 34      
-#define DHT_PIN 35
+#define DHT_PIN 32
 
 //* ---- Illumination LED ----
 #define LEDPIN 13
