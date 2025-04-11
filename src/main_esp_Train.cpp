@@ -13,6 +13,7 @@
 //!---------------------       Definições de variáveis globais   ---------------------
 
 int currentSpeed = 0;
+int receivedSpeed = 0;
 
 //!---------------------       Cabeçalho de Funções     ---------------------
 
@@ -70,6 +71,7 @@ void loop() {
         connectToMQTT();
     }
     mqttClient.loop();
+    Serial.println(mqttClient.state());
 }
 
 //!---------------------       Funções extras        ---------------------
@@ -114,7 +116,7 @@ void connectToMQTT() {
 
             Serial.println("Conectado ao Broker MQTT");
             Serial.print("Inscrito no tópico: ");
-            Serial.print(topicTrainSpeed);
+            Serial.println(topicTrainSpeed);
             turnOffLEDs();
         }
         else {
@@ -176,22 +178,29 @@ void handleError() {
 
 void callback(char* topic, byte* payload, unsigned int length) {
     String message = "";
-
     for (int i = 0; i < length; i++) {
         char c = (char)payload[i];
-        if (!isDigit(c)) {
-            handleError();
-            return;
-        }
         message += c;
     }
-
-    int speed = message.toInt();
-    if (speed > -255 && speed < 255) {
-        if (speed != currentSpeed) {
-            currentSpeed = speed;
-            setSpeed(speed);
-            Serial.println(String("Velocidade alterada para: ") + speed);
+    
+    try
+    {
+        receivedSpeed = message.toInt();
+        Serial.println("velocidade recebida: " + String(receivedSpeed));
+    }
+    catch(const std::exception& e)
+    {
+        handleError();
+        return;
+    }
+    
+    
+    
+    if (receivedSpeed >= 0 && receivedSpeed <= 200) {
+        if (receivedSpeed != currentSpeed) {
+            currentSpeed = receivedSpeed;
+            setSpeed(receivedSpeed);
+            Serial.println(String("Velocidade alterada para: ") + receivedSpeed);
         }
     }
     else {
@@ -203,10 +212,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void setSpeed(int speed) {
     ledcWrite(PWM_CHANNEL_FORWARD, 0);
     ledcWrite(PWM_CHANNEL_BACKWARD, 0);
-    delay(500);
     if (speed > 0) {
         statusLED(3);
-        for (int i = 0; i <= speed; i++) {
+        for (int i = 0; i <= speed; i = i+3) {
             ledcWrite(PWM_CHANNEL_FORWARD, i);
             delay(5);
         }
