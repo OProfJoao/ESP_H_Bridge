@@ -94,6 +94,7 @@ void connectToWiFi() {
     if (WiFi.status() == WL_CONNECTED) {
         Serial.print("Conectando ao WiFi: ");
         Serial.println(String(WIFI_CONN_SSID) + " / " + String(WIFI_CONN_PASSWORD));
+        WiFi.setSleep(true);
     }
     else {
         Serial.println("Falha ao conectar ao WiFi!");
