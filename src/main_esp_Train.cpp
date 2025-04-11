@@ -229,6 +229,8 @@ void setSpeed(int speed) {
     }
     else {
         turnOffLEDs();
+        digitalWrite(PWM_CHANNEL_FORWARD,0);
+        digitalWrite(PWM_CHANNEL_BACKWARD, 0);
         ledcWrite(PWM_CHANNEL_FORWARD, 0);
         ledcWrite(PWM_CHANNEL_BACKWARD, 0);
     }
