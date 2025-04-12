@@ -33,8 +33,8 @@
 #define ULTRA_1_TRIGG 27
 
 
-#define ULTRA_2_ECHO 18
-#define ULTRA_2_TRIGG 5
+#define ULTRA_2_ECHO 19
+#define ULTRA_2_TRIGG 4
 
 //* ---- Sensors ----
 #define LDR_PIN 34      

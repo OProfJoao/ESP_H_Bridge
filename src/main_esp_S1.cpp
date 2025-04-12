@@ -37,6 +37,8 @@ bool lastLightStatus = false;
 unsigned long lastTempReading = 0;
 
 
+byte luminanceThreshold = 30;
+
 //!---------------------       Cabeçalho de Funções     ---------------------
 
 void callback(char* topic, byte* message, unsigned int length);
@@ -97,16 +99,16 @@ void loop() {
     unsigned long currentTime = millis();
 
     //TODO: Read luminance sensor data and publish it to the luminance topic
-    Serial.print("Reading Luminance sensor: ");
+    Serial.println("Luminance sensor...");
     byte luminanceValue = map(analogRead(LDR_PIN), 0, 4095, 0, 100);
-    Serial.println(luminanceValue);
+    Serial.println("Luminance: " + String(luminanceValue));
 
-    if (luminanceValue < 20 && !lastLightStatus && (currentTime - lastLightReading > 5000)) {
+    if (luminanceValue < luminanceThreshold && !lastLightStatus && (currentTime - lastLightReading > 5000)) {
         lastLightStatus = true;
         lastLightReading = currentTime;
         mqttClient.publish(topicLuminanceSensor, String("1").c_str());
     }
-    if (luminanceValue >= 20 && lastLightStatus && (currentTime - lastLightReading > 5000)) {
+    if (luminanceValue >= luminanceThreshold && lastLightStatus && (currentTime - lastLightReading > 5000)) {
         lastLightStatus = false;
         lastLightReading = currentTime;
         mqttClient.publish(topicLuminanceSensor, String("0").c_str());
@@ -115,11 +117,12 @@ void loop() {
 
     //TODO: Read temperatura/humidity sensor data and publish it to the temperatura/humidity topic 
     if ((currentTime - lastTempReading > 3000)) {
-        Serial.print("Reading DHT sensor: ");
+        Serial.println("DHT sensor...");
         float temperature = dht.readTemperature();
         float humidity = dht.readHumidity();
-        Serial.print(temperature); Serial.print(" | ");
-        Serial.println(humidity);
+
+        Serial.print(String(temperature) + "ºC | " + String(humidity) + "%");
+
         if ((!isnan(temperature) || !isnan(humidity))) {
             lastTempReading = currentTime;
             mqttClient.publish(topicTemperatureSensor, String(temperature).c_str());
@@ -129,22 +132,22 @@ void loop() {
 
 
     //TODO: Read distance sensor data and publish it to the presence topic
-    Serial.print("Reading Distance sensor: ");
+    Serial.println("Distance sensor...");
     long microsec = ultrasonic.timing();
     float distance = ultrasonic.convert(microsec, Ultrasonic::CM);
-    Serial.println(distance);
+    Serial.println("Distance: " + String(distance));
 
-    if (distance < 10 && detected == false && (currentTime - lastPresenceDetection >= 3000)) {
+    if (distance < 10 && detected == false && (currentTime - lastPresenceDetection >= 1000)) {
         mqttClient.publish(topicPresenceSensor1, String("1").c_str());
         detected = true;
         lastPresenceDetection = currentTime;
     }
-    if (distance > 10 && detected == true && (currentTime - lastPresenceDetection >= 3000)) {
+    if (distance > 10 && detected == true && (currentTime - lastPresenceDetection >= 1000)) {
         detected = false;
         lastPresenceDetection = currentTime;
         mqttClient.publish(topicPresenceSensor1, String("0").c_str());
     }
-    delay(500);
+    delay(100);
     Serial.println("\n\n");
 }
 
